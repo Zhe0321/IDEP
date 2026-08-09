@@ -252,6 +252,10 @@ input {
   display: block;
 }
 
+.form-message.is-error {
+  color: #b33333;
+}
+
 .divider {
   display: grid;
   grid-template-columns: 1fr auto 1fr;

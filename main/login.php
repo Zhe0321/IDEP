@@ -49,12 +49,12 @@
 
         <form class="login-form" id="manager-login" action="/main/api/login.php" method="post">
           <div class="form-field">
-            <label for="email">Email address</label>
+            <label for="username">Username</label>
             <input
-              id="email"
-              name="email"
-              type="email"
-              placeholder="name@organisation.org"
+              id="username"
+              name="username"
+              type="text"
+              placeholder="Enter your username"
               autocomplete="username"
               required
             >
@@ -78,7 +78,7 @@
 
         <div class="divider" aria-hidden="true"><span>OR</span></div>
 
-        <a class="public-action" href="/index.php#impact">Continue as Public User</a>
+        <a class="public-action" href="/main/public-dashboard.php">Continue as Public User</a>
 
         <aside class="permission-note">
           <strong>Permission check</strong>
