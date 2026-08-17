@@ -15,6 +15,7 @@ if (!isset(
 }
 
 require __DIR__ . '/well-data.php';
+require __DIR__ . '/operations-data.php';
 
 $rolePrefix = $isAdmin ? 'admin' : 'public';
 $pageDetails = [
@@ -29,6 +30,26 @@ $pageDetails = [
     'map' => [
         'title' => 'Map View',
         'subtitle' => 'GIS placeholder for groundwater sensor locations across Bali',
+    ],
+    'historical' => [
+        'title' => 'Historical Data',
+        'subtitle' => 'Historical measurements, data quality and export controls',
+    ],
+    'alerts' => [
+        'title' => 'Alerts',
+        'subtitle' => 'Abnormal readings, battery issues and missing transmissions',
+    ],
+    'reports' => [
+        'title' => 'Reports',
+        'subtitle' => 'Generate IDEP groundwater monitoring summaries and exports',
+    ],
+    'registration' => [
+        'title' => 'Hardware',
+        'subtitle' => 'Register and manage recharge well sensor hardware',
+    ],
+    'settings' => [
+        'title' => 'Settings',
+        'subtitle' => 'Sensor thresholds, users, notification rules and integrations',
     ],
 ];
 
@@ -73,11 +94,11 @@ $pageFile = __DIR__ . '/pages/' . $currentPage . '-page.php';
         </a>
 
         <?php if ($isAdmin): ?>
-          <a href="#historical-data"><span class="nav-icon" aria-hidden="true">↗</span>Historical Data</a>
-          <a href="#alerts"><span class="nav-icon" aria-hidden="true">♧</span>Alerts</a>
-          <a href="#reports"><span class="nav-icon" aria-hidden="true">▤</span>Reports</a>
-          <a href="#registration"><span class="nav-icon" aria-hidden="true">▣</span>Site Registration</a>
-          <a href="#settings"><span class="nav-icon" aria-hidden="true">⚙</span>Settings</a>
+          <a class="<?= $currentPage === 'historical' ? 'active' : '' ?>" href="/main/admin-historical-data.php"><span class="nav-icon" aria-hidden="true">↗</span>Historical Data</a>
+          <a class="<?= $currentPage === 'alerts' ? 'active' : '' ?>" href="/main/admin-alerts.php"><span class="nav-icon" aria-hidden="true">♧</span>Alerts</a>
+          <a class="<?= $currentPage === 'reports' ? 'active' : '' ?>" href="/main/admin-reports.php"><span class="nav-icon" aria-hidden="true">▤</span>Reports</a>
+          <a class="<?= $currentPage === 'registration' ? 'active' : '' ?>" href="/main/admin-site-registration.php"><span class="nav-icon" aria-hidden="true">▣</span>Site Registration</a>
+          <a class="<?= $currentPage === 'settings' ? 'active' : '' ?>" href="/main/admin-settings.php"><span class="nav-icon" aria-hidden="true">⚙</span>Settings</a>
         <?php endif; ?>
       </nav>
 
