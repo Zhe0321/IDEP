@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 $cities = array_values(array_unique(array_column($wells, 'city')));
 sort($cities);
-$mapMode = 'large';
 ?>
 <section class="filter-bar filter-bar--map" aria-label="Map filters">
   <label class="filter-field">
@@ -21,26 +20,26 @@ $mapMode = 'large';
     <select data-filter="id">
       <option value="">All Wells in City</option>
       <?php foreach ($wells as $well): ?>
-        <option value="<?= strtolower(htmlspecialchars($well['id'])) ?>"><?= htmlspecialchars($well['id']) ?> · <?= htmlspecialchars($well['city']) ?></option>
+        <option value="<?= strtolower(htmlspecialchars($well['id'])) ?>" data-city="<?= strtolower(htmlspecialchars($well['city'])) ?>"><?= htmlspecialchars($well['id']) ?> · <?= htmlspecialchars($well['city']) ?></option>
       <?php endforeach; ?>
     </select>
   </label>
 
   <label class="filter-field">
     <span>▣ Start Date</span>
-    <input type="date" value="2026-08-01" data-filter="start-date">
+    <input type="date" data-filter="start-date">
   </label>
 
   <label class="filter-field">
     <span>▦ End Date</span>
-    <input type="date" value="2026-08-20" data-filter="end-date">
+    <input type="date" data-filter="end-date">
   </label>
 </section>
 
 <section class="panel distribution-panel">
   <div>
     <h2>🗺 Geographic Distribution</h2>
-    <p>Visual overview of 76 recharge wells</p>
+    <p>Visual overview of <?= count($wells) ?> recharge wells</p>
   </div>
   <ul class="status-legend" aria-label="Map status colours">
     <li><i class="status-dot status-dot--online"></i><strong>Green:</strong> Online</li>
@@ -57,6 +56,8 @@ $mapMode = 'large';
     </div>
     <a class="small-button" href="https://www.google.com/maps/search/?api=1&query=Bali%2C%20Indonesia" target="_blank" rel="noreferrer">Open Google Maps ↗</a>
   </div>
-  <?php require __DIR__ . '/../map-canvas.php'; ?>
-  <p class="prototype-note">Prototype marker positions only. Real GIS coordinates and sensor records will be connected after the database setup is ready.</p>
+
+  <?php require __DIR__ . '/../leaflet-map.php'; ?>
+
+  <p class="prototype-note">Positions plotted from GPS coordinates on OpenStreetMap — the same coordinate fields captured on the Site Registration page. Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> contributors.</p>
 </section>

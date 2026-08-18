@@ -71,7 +71,14 @@ $pageFile = __DIR__ . '/pages/' . $currentPage . '-page.php';
   <title><?= htmlspecialchars($pageTitle) ?> | Bali Water Protection</title>
   <link rel="icon" href="/images/brand/bwp-mark.png" type="image/png">
   <link rel="stylesheet" href="/main/css/dashboard.css">
+  <?php if ($currentPage === 'map'): ?>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+  <?php endif; ?>
   <script src="/main/js/dashboard.js" defer></script>
+  <?php if ($currentPage === 'map'): ?>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" defer></script>
+    <script src="/main/js/leaflet-map.js" defer></script>
+  <?php endif; ?>
 </head>
 <body data-page="<?= htmlspecialchars($currentPage) ?>">
   <div class="dashboard-shell">
