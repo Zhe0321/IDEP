@@ -5,8 +5,10 @@ declare(strict_types=1);
 // Real coordinates today come from the regency town centre a well's city
 // belongs to (see well-data.php). Once individual site-registration GPS
 // pins are stored per well, swap those in here without touching the JS.
+$mapMode = $mapMode ?? 'large';
+$mapClass = $mapMode === 'compact' ? ' leaflet-stage--compact' : '';
 ?>
-<div class="leaflet-stage">
+<div class="leaflet-stage<?= $mapClass ?>">
   <div id="leaflet-map" class="leaflet-canvas" role="img" aria-label="OpenStreetMap of Bali showing monitoring well locations"></div>
 </div>
 

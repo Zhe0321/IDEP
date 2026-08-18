@@ -1,0 +1,80 @@
+diff --git a/main/css/dashboard.css b/main/css/dashboard.css
+index 6d87a25..a561e48 100644
+--- a/main/css/dashboard.css
++++ b/main/css/dashboard.css
+@@ -1000,6 +1000,11 @@ input[type="date"] {
+   background: var(--pale-blue);
+ }
+ 
++.leaflet-stage--compact {
++  height: 270px;
++  border-width: 13px;
++}
++
+ .leaflet-canvas {
+   width: 100%;
+   height: 100%;
+@@ -1098,6 +1103,11 @@ input[type="date"] {
+     height: 420px;
+     border-width: 10px;
+   }
++
++  .leaflet-stage--compact {
++    height: 310px;
++    border-width: 8px;
++  }
+ }
+ 
+ .operations-filter {
+diff --git a/main/includes/dashboard-layout.php b/main/includes/dashboard-layout.php
+index 5df5944..79719cb 100644
+--- a/main/includes/dashboard-layout.php
++++ b/main/includes/dashboard-layout.php
+@@ -71,11 +71,11 @@ $pageFile = __DIR__ . '/pages/' . $currentPage . '-page.php';
+   <title><?= htmlspecialchars($pageTitle) ?> | Bali Water Protection</title>
+   <link rel="icon" href="/images/brand/bwp-mark.png" type="image/png">
+   <link rel="stylesheet" href="/main/css/dashboard.css">
+-  <?php if ($currentPage === 'map'): ?>
++  <?php if (in_array($currentPage, ['map', 'dashboard'], true)): ?>
+     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+   <?php endif; ?>
+   <script src="/main/js/dashboard.js" defer></script>
+-  <?php if ($currentPage === 'map'): ?>
++  <?php if (in_array($currentPage, ['map', 'dashboard'], true)): ?>
+     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" defer></script>
+     <script src="/main/js/leaflet-map.js" defer></script>
+   <?php endif; ?>
+diff --git a/main/includes/leaflet-map.php b/main/includes/leaflet-map.php
+index f3ec446..8c3243c 100644
+--- a/main/includes/leaflet-map.php
++++ b/main/includes/leaflet-map.php
+@@ -5,8 +5,10 @@ declare(strict_types=1);
+ // Real coordinates today come from the regency town centre a well's city
+ // belongs to (see well-data.php). Once individual site-registration GPS
+ // pins are stored per well, swap those in here without touching the JS.
++$mapMode = $mapMode ?? 'large';
++$mapClass = $mapMode === 'compact' ? ' leaflet-stage--compact' : '';
+ ?>
+-<div class="leaflet-stage">
++<div class="leaflet-stage<?= $mapClass ?>">
+   <div id="leaflet-map" class="leaflet-canvas" role="img" aria-label="OpenStreetMap of Bali showing monitoring well locations"></div>
+ </div>
+ 
+diff --git a/main/includes/pages/dashboard-page.php b/main/includes/pages/dashboard-page.php
+index 156d3a2..88f8078 100644
+--- a/main/includes/pages/dashboard-page.php
++++ b/main/includes/pages/dashboard-page.php
+@@ -7,11 +7,11 @@ $mapMode = 'compact';
+   <div class="section-heading">
+     <div>
+       <h2>Groundwater Monitoring Wells Map</h2>
+-      <p>Prototype locations for Bali Water Protection recharge wells.</p>
++      <p>Live well locations for Bali Water Protection recharge wells.</p>
+     </div>
+     <a class="small-button" href="/main/<?= $rolePrefix ?>-map-view.php">Go to Map →</a>
+   </div>
+-  <?php require __DIR__ . '/../map-canvas.php'; ?>
++  <?php require __DIR__ . '/../leaflet-map.php'; ?>
+ </section>
+ 
+ <section class="stats-grid" aria-label="Programme statistics">
