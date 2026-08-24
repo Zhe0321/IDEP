@@ -4,6 +4,11 @@ declare(strict_types=1);
 $selectedWell = $wells[2];
 $cities = array_values(array_unique(array_column($wells, 'city')));
 sort($cities);
+
+$totalWells = count($wells);
+$onlineWells = count(array_filter($wells, static fn (array $well): bool => $well['status'] === 'online'));
+$offlineWells = count(array_filter($wells, static fn (array $well): bool => $well['status'] === 'offline'));
+$noSignalWells = count(array_filter($wells, static fn (array $well): bool => $well['status'] === 'no-signal'));
 ?>
 <section class="filter-bar" aria-label="Well filters">
   <label class="filter-field">
@@ -21,7 +26,7 @@ sort($cities);
     <select data-filter="id">
       <option value="">All Wells in City</option>
       <?php foreach ($wells as $well): ?>
-        <option value="<?= strtolower(htmlspecialchars($well['id'])) ?>"><?= htmlspecialchars($well['id']) ?> · <?= htmlspecialchars($well['city']) ?></option>
+        <option value="<?= strtolower(htmlspecialchars($well['id'])) ?>" data-city="<?= strtolower(htmlspecialchars($well['city'])) ?>"><?= htmlspecialchars($well['id']) ?> · <?= htmlspecialchars($well['city']) ?></option>
       <?php endforeach; ?>
     </select>
   </label>
@@ -49,8 +54,30 @@ sort($cities);
   </label>
 </section>
 
+<section class="stats-grid" aria-label="Monitoring wells summary" data-wells-stats>
+  <article class="stat-card">
+    <span class="stat-icon" aria-hidden="true">◊</span>
+    <div><span>Wells Shown</span><strong data-stat="total"><?= $totalWells ?></strong><small>Matches current filters</small></div>
+  </article>
+  <article class="stat-card">
+    <span class="stat-icon" aria-hidden="true">●</span>
+    <div><span>Online</span><strong data-stat="online"><?= $onlineWells ?></strong><small>Transmitting normally</small></div>
+  </article>
+  <article class="stat-card">
+    <span class="stat-icon" aria-hidden="true">●</span>
+    <div><span>Offline</span><strong data-stat="offline"><?= $offlineWells ?></strong><small>Needs field review</small></div>
+  </article>
+  <article class="stat-card">
+    <span class="stat-icon" aria-hidden="true">●</span>
+    <div><span>No Signal</span><strong data-stat="no-signal"><?= $noSignalWells ?></strong><small>No sensor connected</small></div>
+  </article>
+</section>
+
 <section class="panel inventory-panel">
-  <h2>Monitoring Wells Inventory</h2>
+  <div class="section-heading">
+    <div><h2>Monitoring Wells Inventory</h2></div>
+    <button class="small-button" type="button" data-export-wells>Export CSV ↓</button>
+  </div>
   <div class="table-scroll inventory-scroll">
     <table class="inventory-table">
       <thead>

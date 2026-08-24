@@ -24,36 +24,120 @@ function wellMatches(well, searchableText = "") {
   const city = activeFilter("city");
   const id = activeFilter("id");
   const status = activeFilter("status");
+  const startDate = activeFilter("start-date");
+  const endDate = activeFilter("end-date");
   const searchHaystack = `${well.id ?? ""} ${well.name ?? ""} ${well.city ?? ""} ${well.statusLabel ?? ""} ${searchableText}`.toLowerCase();
+
+  // The well's monitoring window (startDateISO –> endDateISO) overlaps the requested range as long as 
+  // it doesn't end before the range starts, or start after the range ends.
+  const wellStart = well.startDateISO ?? "";
+  const wellEnd = well.endDateISO ?? "";
+  const withinStart = !startDate || !wellEnd || wellEnd >= startDate;
+  const withinEnd = !endDate || !wellStart || wellStart <= endDate;
 
   return (
     (!query || searchHaystack.includes(query)) &&
     (!city || String(well.city ?? "").toLowerCase() === city) &&
     (!id || String(well.id ?? "").toLowerCase() === id) &&
-    (!status || well.status === status)
+    (!status || well.status === status) &&
+    withinStart &&
+    withinEnd
   );
+}
+
+const wellsStatsPanel = document.querySelector("[data-wells-stats]");
+
+function updateWellsStats(visibleWells) {
+  if (!wellsStatsPanel) {
+    return;
+  }
+
+  const counts = { total: visibleWells.length, online: 0, offline: 0, "no-signal": 0 };
+  visibleWells.forEach((well) => {
+    if (Object.prototype.hasOwnProperty.call(counts, well.status)) {
+      counts[well.status] += 1;
+    }
+  });
+
+  Object.entries(counts).forEach(([key, value]) => {
+    const field = wellsStatsPanel.querySelector(`[data-stat="${key}"]`);
+    if (field) {
+      field.textContent = String(value);
+    }
+  });
 }
 
 function applyFilters() {
   let visibleRows = 0;
+  const visibleWells = [];
 
   wellRows.forEach((row) => {
-    const visible = wellMatches(readWell(row), row.dataset.search ?? "");
+    const well = readWell(row);
+    const visible = wellMatches(well, row.dataset.search ?? "");
     row.hidden = !visible;
-    visibleRows += visible ? 1 : 0;
+    if (visible) {
+      visibleRows += 1;
+      visibleWells.push(well);
+    }
   });
 
   mapMarkers.forEach((marker) => {
     marker.hidden = !wellMatches(readWell(marker));
   });
 
+  if (typeof window.applyLeafletMarkerFilters === "function") {
+    window.applyLeafletMarkerFilters((well) => wellMatches(well));
+  }
+
   if (noResults) {
     noResults.hidden = visibleRows > 0 || wellRows.length === 0;
   }
+
+  updateWellsStats(visibleWells);
 }
 
 searchInput?.addEventListener("input", applyFilters);
 filterInputs.forEach((control) => control.addEventListener("change", applyFilters));
+
+// Cascading Well ID filter: narrow the "Well ID" dropdown to only the wells in the selected city, and keep the City dropdown 
+// in sync if a Well ID is picked directly. Runs on any page that has both filters (wells + map).
+const cityFilterSelect = document.querySelector('[data-filter="city"]');
+const wellIdFilterSelect = document.querySelector('[data-filter="id"]');
+
+function narrowWellIdOptions() {
+  if (!(cityFilterSelect instanceof HTMLSelectElement) || !(wellIdFilterSelect instanceof HTMLSelectElement)) {
+    return;
+  }
+
+  const city = cityFilterSelect.value;
+  let selectionStillValid = false;
+
+  Array.from(wellIdFilterSelect.options).forEach((option) => {
+    if (option.value === "") {
+      return; // always keep the "All Wells in City" option visible
+    }
+    const matchesCity = !city || option.dataset.city === city;
+    option.hidden = !matchesCity;
+    if (matchesCity && option.value === wellIdFilterSelect.value) {
+      selectionStillValid = true;
+    }
+  });
+
+  if (!selectionStillValid) {
+    wellIdFilterSelect.value = "";
+  }
+}
+
+cityFilterSelect?.addEventListener("change", narrowWellIdOptions);
+
+wellIdFilterSelect?.addEventListener("change", () => {
+  const chosen = Array.from(wellIdFilterSelect.options).find((option) => option.value === wellIdFilterSelect.value);
+  if (chosen?.dataset.city && cityFilterSelect instanceof HTMLSelectElement) {
+    cityFilterSelect.value = chosen.dataset.city;
+  }
+});
+
+narrowWellIdOptions();
 
 function updateSelectedWell(well) {
   const selectedPanel = document.querySelector("[data-selected-well]");
@@ -172,6 +256,21 @@ document.querySelectorAll(".measurement-row[data-well]").forEach((row) => {
 });
 
 applyFilters();
+
+document.querySelector("[data-export-wells]")?.addEventListener("click", () => {
+  const header = ["Well ID", "City", "Start Date", "End Date", "Duration", "Total Water Absorption", "Transmission", "Status"];
+  const csvRows = [header.join(",")];
+
+  wellRows
+    .filter((row) => !row.hidden)
+    .forEach((row) => {
+      const well = readWell(row);
+      const values = [well.id, well.city, well.startDate, well.endDate, well.duration, well.absorption, well.transmission, well.statusLabel];
+      csvRows.push(values.map((value) => `"${String(value ?? "").replace(/"/g, '""')}"`).join(","));
+    });
+
+  downloadTextFile("idep-monitoring-wells.csv", csvRows.join("\n"));
+});
 
 const operationalSearchRows = Array.from(document.querySelectorAll("[data-history-row], .alert-row[data-search]"));
 
