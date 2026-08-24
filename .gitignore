@@ -2,3 +2,4 @@
 .env
 .vscode/
 database/connection.php
+main/api/v1/latest.json
