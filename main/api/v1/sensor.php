@@ -61,6 +61,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    // If both height readings are zero, the result must also be zero.
+    if (
+        is_numeric($h1) &&
+        is_numeric($h2) &&
+        (float) $h1 === 0.0 &&
+        (float) $h2 === 0.0
+    ) {
+        $hasil = 0;
+    }
+
 
     // Data yang diterima
     $data = [
