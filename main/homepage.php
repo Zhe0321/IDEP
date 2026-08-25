@@ -48,27 +48,12 @@
           </div>
         </div>
 
-        <div class="photo-mosaic" aria-label="Bali Water Protection programme photos">
-          <figure class="photo photo-one">
+        <div class="photo-single" aria-label="Bali Water Protection programme photo">
+          <figure class="photo">
             <img
               src="/images/homepageIMG/water-culture-bali.jpg"
               alt="Water as part of Balinese culture"
             >
-          </figure>
-          <figure class="photo photo-two">
-            <img
-              src="/images/homepageIMG/recharge-well-community-temple.jpg"
-              alt="Recharge well at a community temple"
-            >
-          </figure>
-          <figure class="photo photo-three">
-            <img
-              src="/images/homepageIMG/recharge-well-introduction.jpg"
-              alt="Community introduction to a recharge well"
-            >
-          </figure>
-          <figure class="photo photo-four">
-            <img src="/images/homepageIMG/bali-landscape.jpg" alt="Bali landscape at sunset">
           </figure>
         </div>
       </div>
@@ -136,21 +121,13 @@
 
         <div class="card-grid information-grid">
           <article class="information-card reveal">
-            <h3>What We Do</h3>
-            <div class="information-body">
-              Bali Water Protection connects practical recharge well construction with data-informed
-              stewardship. Public visitors see the programme’s human impact, while project teams use
-              the dashboard to monitor wells, sensors, historical measurements and alerts.
-            </div>
-          </article>
-
-          <article class="information-card reveal">
             <h3>Why Build Recharge Wells?</h3>
             <div class="information-body">
               Recharge wells actively return rainwater into underground aquifers. They support
               groundwater reserves, reduce local flooding, and create measurable benefits that can be
               translated into community water security metrics.
             </div>
+            <a class="button button-primary button-small card-cta" href="/main/login.php">Learn More</a>
           </article>
 
           <article class="information-card reveal">
@@ -165,18 +142,11 @@
               <span>Ketuk&nbsp; ★★★★★ Jembraya, Bali</span>
               <span>PLACEHOLDER TEXT</span>
             </div>
-            <a class="read-more" href="#dashboard">Read more <span class="arrow" aria-hidden="true"></span></a>
+            <a class="read-more" href="/main/login.php">Read more <span class="arrow" aria-hidden="true"></span></a>
           </article>
         </div>
       </div>
     </section>
   </main>
-
-  <footer class="site-footer" id="dashboard">
-    <div class="page-shell footer-inner">
-      <p>To Learn More about Our Impact, Continue to IDEP’s Bali Water Protection Dashboard.</p>
-      <a class="button button-primary" href="/main/login.php">View Dashboard</a>
-    </div>
-  </footer>
 </body>
 </html>

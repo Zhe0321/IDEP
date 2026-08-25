@@ -2,4 +2,7 @@
 .env
 .vscode/
 database/connection.php
-main/api/v1/latest.json
+*.db
+*.sqlite
+*.sqlite3
+database/idep_groundwater

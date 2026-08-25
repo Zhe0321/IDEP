@@ -7,11 +7,11 @@ $mapMode = 'compact';
   <div class="section-heading">
     <div>
       <h2>Groundwater Monitoring Wells Map</h2>
-      <p>Prototype locations for Bali Water Protection recharge wells.</p>
+      <p>Live well locations for Bali Water Protection recharge wells.</p>
     </div>
     <a class="small-button" href="/main/<?= $rolePrefix ?>-map-view.php">Go to Map →</a>
   </div>
-  <?php require __DIR__ . '/../map-canvas.php'; ?>
+  <?php require __DIR__ . '/../leaflet-map.php'; ?>
 </section>
 
 <section class="stats-grid" aria-label="Programme statistics">
