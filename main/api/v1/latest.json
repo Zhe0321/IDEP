@@ -1,0 +1,11 @@
+{
+    "status": true,
+    "message": "Data received successfully",
+    "data": {
+        "id_device": "device_1",
+        "h1": "0.00",
+        "h2": "0.00",
+        "hasil": 0
+    },
+    "received_at": "25-08-2026 03:33:32"
+}
