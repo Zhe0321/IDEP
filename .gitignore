@@ -2,3 +2,7 @@
 .env
 .vscode/
 database/connection.php
+*.db
+*.sqlite
+*.sqlite3
+database/idep_groundwater
