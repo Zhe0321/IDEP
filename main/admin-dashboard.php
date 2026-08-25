@@ -7,5 +7,6 @@ $userName = 'Field Team';
 $userRole = 'Research Admin';
 $accessLabel = 'ADMIN USER';
 $accessDescription = 'Full operational workspace';
+$currentPage = 'dashboard';
 
 require __DIR__ . '/includes/dashboard-layout.php';

@@ -194,56 +194,25 @@ h1 {
   gap: 16px;
 }
 
-.photo-mosaic {
-  position: relative;
+.photo-single {
   width: 100%;
   height: 340px;
 }
 
-.photo {
-  position: absolute;
+.photo-single .photo {
+  width: 100%;
+  height: 100%;
   margin: 0;
   overflow: hidden;
+  border-radius: 14px;
   background: var(--deep-blue);
   box-shadow: 0 4px 14px rgba(31, 77, 101, 0.1);
 }
 
-.photo img {
+.photo-single .photo img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-}
-
-.photo-one {
-  z-index: 2;
-  top: 2px;
-  left: 4%;
-  width: 50%;
-  height: 54%;
-}
-
-.photo-two {
-  z-index: 3;
-  top: 18px;
-  right: 3%;
-  width: 37%;
-  height: 52%;
-}
-
-.photo-three {
-  z-index: 4;
-  bottom: 0;
-  left: -3%;
-  width: 51%;
-  height: 47%;
-}
-
-.photo-four {
-  z-index: 1;
-  right: -4%;
-  bottom: -14px;
-  width: 58%;
-  height: 61%;
 }
 
 .content-section {
@@ -369,12 +338,19 @@ h1 {
 }
 
 .information-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 24px;
 }
 
 .information-card {
   min-height: 274px;
   padding: 39px 25px 42px;
+}
+
+.card-cta {
+  position: absolute;
+  right: 25px;
+  bottom: 24px;
 }
 
 .information-card h3 {
@@ -391,29 +367,6 @@ h1 {
 
 .testimonies span {
   display: block;
-}
-
-.site-footer {
-  background: var(--white);
-}
-
-.footer-inner {
-  min-height: 82px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 28px;
-  padding-block: 18px;
-}
-
-.footer-inner p {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 650;
-}
-
-.footer-inner .button {
-  min-width: 158px;
 }
 
 .js .reveal {
@@ -445,7 +398,7 @@ h1 {
     gap: 18px;
   }
 
-  .photo-mosaic {
+  .photo-single {
     transform: scale(0.96);
     transform-origin: right center;
   }
@@ -479,8 +432,9 @@ h1 {
     max-width: 650px;
   }
 
-  .photo-mosaic {
+  .photo-single {
     width: min(610px, 100%);
+    height: 300px;
     margin: 10px auto 0;
     transform: none;
   }
@@ -547,23 +501,8 @@ h1 {
     flex: 1 1 140px;
   }
 
-  .photo-mosaic {
-    height: auto;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-
-  .photo {
-    position: relative;
-    inset: auto;
-    width: 100%;
-    height: 135px;
-  }
-
-  .photo-one,
-  .photo-four {
-    transform: translateY(12px);
+  .photo-single {
+    height: 220px;
   }
 
   .impact-section {
@@ -576,16 +515,6 @@ h1 {
 
   .section-heading h2 {
     font-size: 27px;
-  }
-
-  .footer-inner {
-    align-items: flex-start;
-    flex-direction: column;
-    padding-block: 26px;
-  }
-
-  .footer-inner .button {
-    width: 100%;
   }
 }
 
