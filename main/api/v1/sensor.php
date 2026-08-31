@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+date_default_timezone_set('Asia/Makassar');
+
 header('Content-Type: application/json');
 
 require_once __DIR__ . '/../../../database/db.php';
@@ -129,8 +131,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $readingStatement = $pdo->prepare(
             'INSERT INTO sensor_readings
-             (sensor_id, h1, h2, hasil, received_at)
-             VALUES (:sensor_id, :h1, :h2, :hasil, :received_at)'
+             (sensor_id, h1, h2, hasil, received_at, created_at)
+             VALUES (:sensor_id, :h1, :h2, :hasil, :received_at, :created_at)'
         );
         $readingStatement->execute([
             ':sensor_id' => $sensorId,
@@ -138,6 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ':h2' => $h2,
             ':hasil' => $hasil,
             ':received_at' => $receivedAt,
+            ':created_at' => $receivedAt,
         ]);
 
         $pdo->commit();
