@@ -16,6 +16,7 @@ $mapClass = $mapMode === 'compact' ? ' leaflet-stage--compact' : '';
   window.WELLS_GEO_DATA = <?= json_encode(array_map(static function (array $well): array {
       return [
           'id' => $well['id'],
+          'deviceId' => $well['deviceId'] ?? null,
           'name' => $well['name'],
           'city' => $well['city'],
           'lat' => $well['lat'],

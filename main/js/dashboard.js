@@ -27,6 +27,11 @@ function setLiveSensorConnection(status, label) {
   }
 }
 
+function publishLiveSensor(detail) {
+  window.LATEST_SENSOR_DATA = detail;
+  window.dispatchEvent(new CustomEvent("idep:sensor-update", { detail }));
+}
+
 async function refreshLiveSensor() {
   if (!liveSensor) {
     return;
@@ -55,7 +60,19 @@ async function refreshLiveSensor() {
     setLiveSensorText("[data-live-h2]", payload.data.h2);
     setLiveSensorText("[data-live-hasil]", payload.data.hasil);
     setLiveSensorText("[data-live-received]", `${receivedAt} WITA`);
-    setLiveSensorConnection(isOnline ? "online" : "no-signal", isOnline ? "Online" : "No recent signal");
+    const sensorStatus = isOnline ? "online" : "no-signal";
+    const sensorStatusLabel = isOnline ? "Online" : "No recent signal";
+    setLiveSensorConnection(sensorStatus, sensorStatusLabel);
+
+    publishLiveSensor({
+      deviceId: payload.data.id_device,
+      status: sensorStatus,
+      statusLabel: sensorStatusLabel,
+      h1: payload.data.h1,
+      h2: payload.data.h2,
+      hasil: payload.data.hasil,
+      receivedAt,
+    });
 
     if (liveSensorStatus) {
       liveSensorStatus.textContent = isOnline
@@ -65,6 +82,15 @@ async function refreshLiveSensor() {
     liveSensor.classList.remove("is-error");
   } catch {
     setLiveSensorConnection("offline", "Unavailable");
+    publishLiveSensor({
+      deviceId: "device_1",
+      status: "offline",
+      statusLabel: "Unavailable",
+      h1: "—",
+      h2: "—",
+      hasil: "—",
+      receivedAt: "—",
+    });
     if (liveSensorStatus) {
       liveSensorStatus.textContent = "Unable to load device_1";
     }
