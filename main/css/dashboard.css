@@ -590,6 +590,48 @@ input[type="date"] {
   text-align: right;
 }
 
+.live-sensor__heading {
+  align-items: center;
+}
+
+.live-sensor__heading:hover {
+  background: transparent;
+}
+
+.live-sensor__values {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 13px 0 4px;
+}
+
+.live-sensor__values div {
+  border-radius: 8px;
+  background: var(--pale-blue);
+  padding: 12px;
+}
+
+.live-sensor__values dt {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.live-sensor__values dd {
+  margin: 5px 0 0;
+  color: var(--ink);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.live-sensor__note {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.live-sensor.is-error .live-sensor__values {
+  opacity: 0.5;
+}
+
 .status-dot {
   width: 9px;
   height: 9px;
