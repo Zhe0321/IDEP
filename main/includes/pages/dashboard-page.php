@@ -21,7 +21,7 @@ $mapMode = 'compact';
   </article>
   <article class="stat-card">
     <span class="stat-icon" aria-hidden="true">≈</span>
-    <div><span>Online Sensors</span><strong>22 / 24</strong><small>Sensor status normal</small></div>
+    <div><span>Online Sensors</span><strong data-live-online-sensors>— / 1</strong><small data-live-sensor-status>Checking device_1…</small></div>
   </article>
   <article class="stat-card" id="alerts">
     <span class="stat-icon" aria-hidden="true">!</span>
@@ -36,21 +36,19 @@ $mapMode = 'compact';
 <section class="dashboard-overview-grid">
   <article class="panel measurements-panel">
     <h2>Recent Sensor Measurements</h2>
-    <div class="measurement-list">
-      <?php foreach (array_slice($wells, 0, 5) as $well): ?>
-        <button
-          class="measurement-row"
-          type="button"
-          data-search="<?= strtolower(htmlspecialchars($well['id'] . ' ' . $well['city'] . ' ' . $well['statusLabel'])) ?>"
-          data-well='<?= htmlspecialchars(json_encode($well, JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8') ?>'
-        >
-          <span><i class="status-dot status-dot--<?= htmlspecialchars($well['status']) ?>"></i><?= htmlspecialchars($well['id']) ?> · <?= htmlspecialchars($well['city']) ?></span>
-          <strong><?= htmlspecialchars($well['litresMinute']) ?></strong>
-          <time><?= htmlspecialchars($well['lastTransmission']) ?></time>
-        </button>
-      <?php endforeach; ?>
+    <div class="measurement-list live-sensor" data-live-sensor aria-live="polite">
+      <div class="measurement-row live-sensor__heading">
+        <span><i class="status-dot status-dot--no-signal" data-live-status-dot></i><strong data-live-device>device_1</strong></span>
+        <strong data-live-connection>Loading…</strong>
+        <time data-live-received>—</time>
+      </div>
+      <dl class="live-sensor__values">
+        <div><dt>H1</dt><dd data-live-h1>—</dd></div>
+        <div><dt>H2</dt><dd data-live-h2>—</dd></div>
+        <div><dt>Hasil</dt><dd data-live-hasil>—</dd></div>
+      </dl>
     </div>
-    <a class="text-link" href="/main/<?= $rolePrefix ?>-monitoring-wells.php">View all measurements →</a>
+    <small class="live-sensor__note">Automatically refreshes every 60 seconds · Bali time (WITA)</small>
   </article>
 
   <a class="dashboard-photo" href="/main/<?= $rolePrefix ?>-monitoring-wells.php" aria-label="View monitoring well inventory">

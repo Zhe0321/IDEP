@@ -590,6 +590,48 @@ input[type="date"] {
   text-align: right;
 }
 
+.live-sensor__heading {
+  align-items: center;
+}
+
+.live-sensor__heading:hover {
+  background: transparent;
+}
+
+.live-sensor__values {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 13px 0 4px;
+}
+
+.live-sensor__values div {
+  border-radius: 8px;
+  background: var(--pale-blue);
+  padding: 12px;
+}
+
+.live-sensor__values dt {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.live-sensor__values dd {
+  margin: 5px 0 0;
+  color: var(--ink);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.live-sensor__note {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.live-sensor.is-error .live-sensor__values {
+  opacity: 0.5;
+}
+
 .status-dot {
   width: 9px;
   height: 9px;
@@ -1032,6 +1074,55 @@ input[type="date"] {
   background: var(--grey);
 }
 
+.leaflet-live-device-icon {
+  overflow: visible;
+  border: 0;
+  background: transparent;
+}
+
+.leaflet-live-device {
+  width: max-content;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.leaflet-live-device .leaflet-well-dot {
+  flex: 0 0 18px;
+}
+
+.leaflet-live-device__label {
+  border: 1px solid rgba(36, 150, 94, 0.28);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 3px 10px rgba(20, 26, 33, 0.2);
+  padding: 4px 8px;
+  color: #168f54;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.leaflet-well-dot--online.leaflet-well-dot--live {
+  animation: live-sensor-pulse 1.8s ease-out infinite;
+}
+
+@keyframes live-sensor-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(36, 185, 111, 0.45), 0 3px 10px rgba(20, 26, 33, 0.32);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(36, 185, 111, 0), 0 3px 10px rgba(20, 26, 33, 0.32);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .leaflet-well-dot--online.leaflet-well-dot--live {
+    animation: none;
+  }
+}
+
 .well-popup {
   font-family: "Figtree", "General Sans", Arial, Helvetica, sans-serif;
   width: 190px;
@@ -1049,6 +1140,34 @@ input[type="date"] {
 .well-popup h4 {
   margin: 0 0 2px;
   font-size: 13px;
+}
+
+.well-popup .well-popup__device-name {
+  margin-top: 5px;
+  color: var(--ink);
+  font-size: 18px;
+}
+
+.well-popup__live-badge {
+  width: max-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 999px;
+  background: #e4f7ec;
+  padding: 4px 8px;
+  color: #168f54;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.well-popup__live-badge i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--green);
 }
 
 .well-popup .well-popup__city {

@@ -4,6 +4,105 @@ const mapMarkers = Array.from(document.querySelectorAll(".map-marker[data-well]"
 const filterInputs = Array.from(document.querySelectorAll("[data-filter]"));
 const noResults = document.querySelector("[data-no-results]");
 
+const liveSensor = document.querySelector("[data-live-sensor]");
+const liveOnlineSensors = document.querySelector("[data-live-online-sensors]");
+const liveSensorStatus = document.querySelector("[data-live-sensor-status]");
+
+function setLiveSensorText(selector, value) {
+  const element = document.querySelector(selector);
+  if (element) {
+    element.textContent = String(value ?? "—");
+  }
+}
+
+function setLiveSensorConnection(status, label) {
+  const statusDot = document.querySelector("[data-live-status-dot]");
+  if (statusDot) {
+    statusDot.className = `status-dot status-dot--${status}`;
+  }
+
+  setLiveSensorText("[data-live-connection]", label);
+  if (liveOnlineSensors) {
+    liveOnlineSensors.textContent = status === "online" ? "1 / 1" : "0 / 1";
+  }
+}
+
+function publishLiveSensor(detail) {
+  window.LATEST_SENSOR_DATA = detail;
+  window.dispatchEvent(new CustomEvent("idep:sensor-update", { detail }));
+}
+
+async function refreshLiveSensor() {
+  if (!liveSensor) {
+    return;
+  }
+
+  try {
+    const response = await fetch("/main/api/v1/sensor.php", {
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    });
+    const payload = await response.json();
+
+    if (!response.ok || !payload.status || !payload.data) {
+      throw new Error(payload.message ?? "Sensor data unavailable");
+    }
+
+    const receivedAt = String(payload.received_at ?? "");
+    const receivedDate = new Date(`${receivedAt.replace(" ", "T")}+08:00`);
+    const ageMilliseconds = Date.now() - receivedDate.getTime();
+    const isOnline = Number.isFinite(ageMilliseconds)
+      && ageMilliseconds >= 0
+      && ageMilliseconds <= 3 * 60 * 1000;
+
+    setLiveSensorText("[data-live-device]", payload.data.id_device);
+    setLiveSensorText("[data-live-h1]", payload.data.h1);
+    setLiveSensorText("[data-live-h2]", payload.data.h2);
+    setLiveSensorText("[data-live-hasil]", payload.data.hasil);
+    setLiveSensorText("[data-live-received]", `${receivedAt} WITA`);
+    const sensorStatus = isOnline ? "online" : "no-signal";
+    const sensorStatusLabel = isOnline ? "Online" : "No recent signal";
+    setLiveSensorConnection(sensorStatus, sensorStatusLabel);
+
+    publishLiveSensor({
+      deviceId: payload.data.id_device,
+      status: sensorStatus,
+      statusLabel: sensorStatusLabel,
+      h1: payload.data.h1,
+      h2: payload.data.h2,
+      hasil: payload.data.hasil,
+      receivedAt,
+    });
+
+    if (liveSensorStatus) {
+      liveSensorStatus.textContent = isOnline
+        ? `${payload.data.id_device} transmitting normally`
+        : `${payload.data.id_device} has not transmitted recently`;
+    }
+    liveSensor.classList.remove("is-error");
+  } catch {
+    setLiveSensorConnection("offline", "Unavailable");
+    publishLiveSensor({
+      deviceId: "device_1",
+      status: "offline",
+      statusLabel: "Unavailable",
+      h1: "—",
+      h2: "—",
+      hasil: "—",
+      receivedAt: "—",
+    });
+    if (liveSensorStatus) {
+      liveSensorStatus.textContent = "Unable to load device_1";
+    }
+    liveSensor.classList.add("is-error");
+  }
+}
+
+if (liveSensor) {
+  refreshLiveSensor();
+  window.setInterval(refreshLiveSensor, 60_000);
+}
+
 function readWell(element) {
   try {
     return JSON.parse(element.dataset.well ?? "{}");

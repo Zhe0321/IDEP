@@ -6,6 +6,7 @@ $wellPhoto = '/images/wells/recharge-well-placeholder.png';
 $wells = [
     [
         'id' => 'RW-01',
+        'deviceId' => 'device_1',
         'name' => 'Ubud Area 1',
         'city' => 'Ubud',
         'lat' => -8.5069,

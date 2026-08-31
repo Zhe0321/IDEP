@@ -1,8 +1,22 @@
 <?php
+declare(strict_types=1);
+
+date_default_timezone_set('Asia/Makassar');
 
 header('Content-Type: application/json');
 
-$latestFile = __DIR__ . '/latest.json';
+require_once __DIR__ . '/../../../database/db.php';
+
+try {
+    $pdo = idepDatabase();
+} catch (Throwable $error) {
+    http_response_code(500);
+    echo json_encode([
+        'status' => false,
+        'message' => $error->getMessage(),
+    ], JSON_PRETTY_PRINT);
+    exit;
+}
 
 
 // =====================================================
@@ -11,8 +25,17 @@ $latestFile = __DIR__ . '/latest.json';
 // =====================================================
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    $statement = $pdo->query(
+        'SELECT sensors.id_device, sensor_readings.h1, sensor_readings.h2,
+                sensor_readings.hasil, sensor_readings.received_at
+         FROM sensor_readings
+         INNER JOIN sensors ON sensors.id = sensor_readings.sensor_id
+         ORDER BY sensor_readings.id DESC
+         LIMIT 1'
+    );
+    $latest = $statement->fetch();
 
-    if (!file_exists($latestFile)) {
+    if (!$latest) {
         echo json_encode([
             'status' => false,
             'message' => 'No sensor data received yet'
@@ -21,9 +44,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         exit;
     }
 
-    $data = file_get_contents($latestFile);
-
-    echo $data;
+    echo json_encode([
+        'status' => true,
+        'message' => 'Latest sensor data',
+        'data' => [
+            'id_device' => $latest['id_device'],
+            'h1' => $latest['h1'],
+            'h2' => $latest['h2'],
+            'hasil' => $latest['hasil'],
+        ],
+        'received_at' => $latest['received_at'],
+    ], JSON_PRETTY_PRINT);
 
     exit;
 }
@@ -72,6 +103,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
 
+    $receivedAt = date('Y-m-d H:i:s');
+
+    try {
+        $pdo->beginTransaction();
+
+        $sensorStatement = $pdo->prepare(
+            'INSERT OR IGNORE INTO sensors
+             (sensor_code, sensor_name, id_device, status)
+             VALUES (:sensor_code, :sensor_name, :id_device, 1)'
+        );
+        $sensorStatement->execute([
+            ':sensor_code' => $id_device,
+            ':sensor_name' => $id_device,
+            ':id_device' => $id_device,
+        ]);
+
+        $sensorIdStatement = $pdo->prepare(
+            'SELECT id FROM sensors WHERE id_device = :id_device LIMIT 1'
+        );
+        $sensorIdStatement->execute([':id_device' => $id_device]);
+        $sensorId = $sensorIdStatement->fetchColumn();
+
+        if ($sensorId === false) {
+            throw new RuntimeException('Unable to register sensor');
+        }
+
+        $readingStatement = $pdo->prepare(
+            'INSERT INTO sensor_readings
+             (sensor_id, h1, h2, hasil, received_at, created_at)
+             VALUES (:sensor_id, :h1, :h2, :hasil, :received_at, :created_at)'
+        );
+        $readingStatement->execute([
+            ':sensor_id' => $sensorId,
+            ':h1' => $h1,
+            ':h2' => $h2,
+            ':hasil' => $hasil,
+            ':received_at' => $receivedAt,
+            ':created_at' => $receivedAt,
+        ]);
+
+        $pdo->commit();
+    } catch (Throwable $error) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+
+        http_response_code(500);
+        echo json_encode([
+            'status' => false,
+            'message' => 'Unable to save sensor data',
+        ], JSON_PRETTY_PRINT);
+        exit;
+    }
+
     // Data yang diterima
     $data = [
         'status' => true,
@@ -84,16 +169,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'hasil' => $hasil
         ],
 
-        'received_at' => date('d-m-Y H:i:s'),
+        'received_at' => $receivedAt,
     ];
-
-
-    // Simpan data terakhir
-    file_put_contents(
-        $latestFile,
-        json_encode($data, JSON_PRETTY_PRINT),
-        LOCK_EX
-    );
 
 
     // Response ke sensor
