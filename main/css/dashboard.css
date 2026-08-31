@@ -1074,6 +1074,11 @@ input[type="date"] {
   background: var(--grey);
 }
 
+.leaflet-well-dot--pending {
+  outline: 2px dashed #d98c1f;
+  outline-offset: 3px;
+}
+
 .leaflet-live-device-icon {
   overflow: visible;
   border: 0;
@@ -1102,6 +1107,12 @@ input[type="date"] {
   font-weight: 800;
   letter-spacing: 0.04em;
   white-space: nowrap;
+}
+
+.leaflet-live-device__label--pending {
+  border-color: rgba(217, 140, 31, 0.35);
+  color: #a8650a;
+  background: rgba(255, 247, 232, 0.96);
 }
 
 .leaflet-well-dot--online.leaflet-well-dot--live {
@@ -1174,6 +1185,17 @@ input[type="date"] {
   margin: 0 0 8px;
   color: var(--muted);
   font-size: 11px;
+}
+
+.well-popup__pending-notice {
+  margin: 0 0 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: #fff3e0;
+  color: #a8650a;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.35;
 }
 
 .well-popup dl {

@@ -33,10 +33,6 @@ function publishLiveSensor(detail) {
 }
 
 async function refreshLiveSensor() {
-  if (!liveSensor) {
-    return;
-  }
-
   try {
     const response = await fetch("/main/api/v1/sensor.php", {
       headers: { Accept: "application/json" },
@@ -79,7 +75,7 @@ async function refreshLiveSensor() {
         ? `${payload.data.id_device} transmitting normally`
         : `${payload.data.id_device} has not transmitted recently`;
     }
-    liveSensor.classList.remove("is-error");
+    liveSensor?.classList.remove("is-error");
   } catch {
     setLiveSensorConnection("offline", "Unavailable");
     publishLiveSensor({
@@ -94,14 +90,12 @@ async function refreshLiveSensor() {
     if (liveSensorStatus) {
       liveSensorStatus.textContent = "Unable to load device_1";
     }
-    liveSensor.classList.add("is-error");
+    liveSensor?.classList.add("is-error");
   }
 }
 
-if (liveSensor) {
-  refreshLiveSensor();
-  window.setInterval(refreshLiveSensor, 60_000);
-}
+refreshLiveSensor();
+window.setInterval(refreshLiveSensor, 60_000);
 
 function readWell(element) {
   try {

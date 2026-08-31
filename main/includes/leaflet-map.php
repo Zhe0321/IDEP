@@ -21,6 +21,7 @@ $mapClass = $mapMode === 'compact' ? ' leaflet-stage--compact' : '';
           'city' => $well['city'],
           'lat' => $well['lat'],
           'lng' => $well['lng'],
+          'locationPending' => $well['locationPending'] ?? false,
           'status' => $well['status'],
           'statusLabel' => $well['statusLabel'],
           'volume' => $well['volume'],

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-$selectedWell = $wells[2];
+$selectedWell = $wells[0];
 $cities = array_values(array_unique(array_column($wells, 'city')));
 sort($cities);
 

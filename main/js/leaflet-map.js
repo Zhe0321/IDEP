@@ -24,16 +24,32 @@
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
   }).addTo(map);
 
-  function markerIcon(status, deviceId = null) {
-    const liveDevice = deviceId
+  function markerIcon(status, deviceId = null, locationPending = false) {
+    const dotClasses = [
+      "leaflet-well-dot",
+      `leaflet-well-dot--${status}`,
+      deviceId ? "leaflet-well-dot--live" : "",
+      locationPending ? "leaflet-well-dot--pending" : "",
+    ].filter(Boolean).join(" ");
+
+    const labels = [];
+    if (deviceId) {
+      labels.push(`<span class="leaflet-live-device__label">${escapeHtml(deviceId)} · LIVE</span>`);
+    }
+    if (locationPending) {
+      labels.push(`<span class="leaflet-live-device__label leaflet-live-device__label--pending">⚠ Location Pending</span>`);
+    }
+
+    const hasChrome = deviceId || locationPending;
+    const liveDevice = hasChrome
       ? `<span class="leaflet-live-device">
-          <span class="leaflet-well-dot leaflet-well-dot--${status} leaflet-well-dot--live"></span>
-          <span class="leaflet-live-device__label">${escapeHtml(deviceId)} · LIVE</span>
+          <span class="${dotClasses}"></span>
+          ${labels.join("")}
         </span>`
-      : `<span class="leaflet-well-dot leaflet-well-dot--${status}"></span>`;
+      : `<span class="${dotClasses}"></span>`;
 
     return L.divIcon({
-      className: deviceId ? "leaflet-live-device-icon" : "",
+      className: hasChrome ? "leaflet-live-device-icon" : "",
       html: liveDevice,
       iconSize: [18, 18],
       iconAnchor: [9, 9],
@@ -42,8 +58,12 @@
   }
 
   function popupHtml(well) {
-    const photo = well.photo && !well.deviceId
+    const photo = well.photo
       ? `<img class="well-popup__photo" src="${well.photo}" alt="Recharge well photo for ${well.id}">`
+      : "";
+
+    const pendingNotice = well.locationPending
+      ? `<p class="well-popup__pending-notice">⚠ Location pending - coordinates not yet confirmed</p>`
       : "";
 
     const identity = well.deviceId
@@ -72,6 +92,7 @@
     return `
       <div class="well-popup">
         ${photo}
+        ${pendingNotice}
         ${identity}
         <dl>
           <dt>Status</dt><dd><i class="status-dot status-dot--${well.status}"></i>${well.statusLabel ?? "—"}</dd>
@@ -90,7 +111,7 @@
   const markerEntries = wells
     .filter((well) => typeof well.lat === "number" && typeof well.lng === "number")
     .map((well) => {
-      const marker = L.marker([well.lat, well.lng], { icon: markerIcon(well.status, well.deviceId) });
+      const marker = L.marker([well.lat, well.lng], { icon: markerIcon(well.status, well.deviceId, well.locationPending) });
       marker.bindPopup(popupHtml(well));
       marker.addTo(map);
       return { well, marker };
@@ -114,7 +135,7 @@
       hasil: sensor.hasil,
       lastTransmission: sensor.receivedAt === "—" ? "—" : `${sensor.receivedAt} WITA`,
     });
-    entry.marker.setIcon(markerIcon(entry.well.status, entry.well.deviceId));
+    entry.marker.setIcon(markerIcon(entry.well.status, entry.well.deviceId, entry.well.locationPending));
     entry.marker.setPopupContent(popupHtml(entry.well));
   }
 
