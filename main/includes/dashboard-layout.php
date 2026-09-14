@@ -61,6 +61,9 @@ if (!array_key_exists($currentPage, $pageDetails)) {
 $pageTitle = $pageDetails[$currentPage]['title'];
 $pageSubtitle = $pageDetails[$currentPage]['subtitle'];
 $pageFile = __DIR__ . '/pages/' . $currentPage . '-page.php';
+$dashboardCssVersion = (string) filemtime(__DIR__ . '/../css/dashboard.css');
+$dashboardJsVersion = (string) filemtime(__DIR__ . '/../js/dashboard.js');
+$leafletMapJsVersion = (string) filemtime(__DIR__ . '/../js/leaflet-map.js');
 ?>
 <!doctype html>
 <html lang="en">
@@ -70,14 +73,14 @@ $pageFile = __DIR__ . '/pages/' . $currentPage . '-page.php';
   <meta name="description" content="Bali Water Protection groundwater monitoring dashboard.">
   <title><?= htmlspecialchars($pageTitle) ?> | Bali Water Protection</title>
   <link rel="icon" href="/images/brand/bwp-mark.png" type="image/png">
-  <link rel="stylesheet" href="/main/css/dashboard.css">
+  <link rel="stylesheet" href="/main/css/dashboard.css?v=<?= $dashboardCssVersion ?>">
   <?php if (in_array($currentPage, ['map', 'dashboard'], true)): ?>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
   <?php endif; ?>
-  <script src="/main/js/dashboard.js" defer></script>
+  <script src="/main/js/dashboard.js?v=<?= $dashboardJsVersion ?>" defer></script>
   <?php if (in_array($currentPage, ['map', 'dashboard'], true)): ?>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" defer></script>
-    <script src="/main/js/leaflet-map.js" defer></script>
+    <script src="/main/js/leaflet-map.js?v=<?= $leafletMapJsVersion ?>" defer></script>
   <?php endif; ?>
 </head>
 <body data-page="<?= htmlspecialchars($currentPage) ?>">
