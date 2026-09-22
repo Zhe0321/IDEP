@@ -26,7 +26,7 @@ $homepageJsVersion = (string) filemtime(__DIR__ . '/js/homepage.js');
       </a>
 
       <nav class="main-nav" aria-label="Main navigation">
-        <a class="button button-primary button-small" href="https://idepfoundation.org/donate/">Donate</a>
+        <a class="button button-primary button-small" href="https://www.globalgiving.org/donate/72769/idep-foundation/" target="_blank" rel="noopener">Donate</a>
         <a class="button button-primary button-small" href="/main/login.php">Login</a>
       </nav>
     </div>

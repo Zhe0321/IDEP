@@ -24,11 +24,11 @@ $settingsSections = [
 
   <form class="panel settings-form" data-settings-form>
     <h2 data-settings-heading>Groundwater Monitoring Settings</h2>
-    <label><span>Water level alert threshold</span><input name="water_threshold" value="Prototype value"></label>
-    <label><span>Missing transmission window</span><input name="transmission_window" value="Prototype value"></label>
-    <label><span>Signal strength minimum</span><input name="signal_minimum" value="Prototype value"></label>
-    <label><span>Data quality review rule</span><input name="quality_rule" value="Prototype value"></label>
+    <label><span>Water level alert threshold</span><input name="water_threshold" value="3.00 m"></label>
+    <label><span>Missing transmission window</span><input name="transmission_window" value="15 minutes"></label>
+    <label><span>Signal strength minimum</span><input name="signal_minimum" value="-85 dBm"></label>
+    <label><span>Data quality review rule</span><input name="quality_rule" value="Review changes greater than 0.50 m"></label>
     <label><span>Default export format</span><select name="export_format"><option>CSV and Excel</option><option>CSV</option><option>Excel</option></select></label>
-    <div class="settings-actions"><button type="submit">Save prototype settings</button><span data-settings-message hidden>Settings saved in this browser session.</span></div>
+    <div class="settings-actions"><button type="submit">Save settings</button><span data-settings-message hidden>Settings saved in this browser.</span></div>
   </form>
 </section>

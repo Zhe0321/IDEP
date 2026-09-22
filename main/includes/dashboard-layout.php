@@ -14,6 +14,19 @@ if (!isset(
     exit('Dashboard role configuration is missing.');
 }
 
+if ($isAdmin) {
+    session_start();
+    if (($_SESSION['idep_admin'] ?? false) !== true) {
+        header('Location: /main/login.php');
+        exit;
+    }
+    if (!empty($_SESSION['idep_user_name'])) {
+        $userName = (string) $_SESSION['idep_user_name'];
+        $nameParts = preg_split('/\s+/', trim($userName)) ?: [];
+        $userInitials = strtoupper(implode('', array_map(static fn (string $part): string => $part[0] ?? '', array_slice($nameParts, 0, 2))));
+    }
+}
+
 require __DIR__ . '/well-data.php';
 require __DIR__ . '/operations-data.php';
 
@@ -141,7 +154,7 @@ $navIcons = [
       <?php endif; ?>
 
       <div class="sidebar-bottom">
-        <a class="session-link" href="/main/login.php">
+        <a class="session-link" href="<?= $isAdmin ? '/main/logout.php' : '/main/login.php' ?>">
           <span aria-hidden="true">⇥</span><?= $isAdmin ? 'Logout' : 'Login' ?>
         </a>
         <div class="support-card">

@@ -6,31 +6,31 @@ window.requestAnimationFrame(() => {
 
 const loginForm = document.querySelector("#manager-login");
 const formMessage = document.querySelector("#form-message");
-const demoManagerUsername = "admin123";
-const demoManagerPassword = "admin123";
-
-loginForm?.addEventListener("submit", (event) => {
+loginForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
 
   if (!loginForm.reportValidity()) {
     return;
   }
 
-  const formData = new FormData(loginForm);
-  const username = String(formData.get("username") ?? "").trim();
-  const password = String(formData.get("password") ?? "");
-
-  if (username !== demoManagerUsername || password !== demoManagerPassword) {
-    formMessage.textContent = "Incorrect manager username or password.";
-    formMessage.classList.add("is-visible", "is-error");
-    return;
-  }
-
-  formMessage.textContent = "Demo access granted. Opening the administrator dashboard...";
+  formMessage.textContent = "Checking your account...";
   formMessage.classList.remove("is-error");
   formMessage.classList.add("is-visible");
 
-  window.setTimeout(() => {
-    window.location.assign("/main/admin-dashboard.php");
-  }, 450);
+  try {
+    const response = await fetch(loginForm.action, {
+      method: "POST",
+      body: new FormData(loginForm),
+      headers: { Accept: "application/json" },
+    });
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+      throw new Error(result.message ?? "Unable to sign in.");
+    }
+    formMessage.textContent = result.message;
+    window.location.assign(result.redirect ?? "/main/admin-dashboard.php");
+  } catch (error) {
+    formMessage.textContent = error instanceof Error ? error.message : "Unable to sign in.";
+    formMessage.classList.add("is-error");
+  }
 });

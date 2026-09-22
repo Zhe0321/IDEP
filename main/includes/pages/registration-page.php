@@ -5,10 +5,10 @@ $cities = array_values(array_unique(array_column($wells, 'city')));
 sort($cities);
 ?>
 <section class="filter-bar filter-bar--registration" aria-label="Hardware filters">
-  <label class="filter-field"><span>◫ Location (City)</span><select><option>All Bali (Aggregate)</option><?php foreach ($cities as $city): ?><option><?= htmlspecialchars($city) ?></option><?php endforeach; ?></select></label>
-  <label class="filter-field"><span>● Well ID</span><select><option>All Wells in City</option><?php foreach ($wells as $well): ?><option><?= htmlspecialchars($well['id']) ?> · <?= htmlspecialchars($well['city']) ?></option><?php endforeach; ?></select></label>
-  <label class="filter-field"><span>▣ Start Date</span><input type="date"></label>
-  <label class="filter-field"><span>▦ End Date</span><input type="date"></label>
+  <label class="filter-field"><span>◫ Location (City)</span><select data-hardware-filter="city"><option value="">All Bali (Aggregate)</option><?php foreach ($cities as $city): ?><option value="<?= htmlspecialchars($city) ?>"><?= htmlspecialchars($city) ?></option><?php endforeach; ?></select></label>
+  <label class="filter-field"><span>● Well ID</span><select data-hardware-filter="name"><option value="">All Wells in City</option><?php foreach ($hardwareRecords as $record): ?><option value="<?= htmlspecialchars($record['name']) ?>"><?= htmlspecialchars($record['name']) ?> · <?= htmlspecialchars($record['city']) ?></option><?php endforeach; ?></select></label>
+  <label class="filter-field"><span>▣ Start Date</span><input type="date" data-hardware-filter="start-date"></label>
+  <label class="filter-field"><span>▦ End Date</span><input type="date" data-hardware-filter="end-date"></label>
 </section>
 
 <div class="registration-toolbar">

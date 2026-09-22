@@ -1440,6 +1440,18 @@ input[type="date"] {
   margin-bottom: 18px;
 }
 
+.records-panel .table-scroll {
+  max-height: 430px;
+  overflow: auto;
+}
+
+.records-panel .operations-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--white);
+}
+
 .operations-table {
   width: 100%;
   min-width: 760px;
