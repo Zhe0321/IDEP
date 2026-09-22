@@ -67,8 +67,8 @@ input[type="date"] {
 }
 
 .sidebar-logo {
-  width: 205px;
-  margin: 0 auto 10px;
+  width: 214px;
+  margin: 5px auto 26px;
 }
 
 .sidebar-logo img {
@@ -115,8 +115,18 @@ input[type="date"] {
   width: 22px;
   flex: 0 0 22px;
   text-align: center;
-  font-size: 21px;
   line-height: 1;
+}
+
+.nav-icon svg {
+  width: 22px;
+  height: 22px;
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .access-card {
@@ -271,6 +281,118 @@ input[type="date"] {
   display: grid;
   gap: 23px;
   padding: 30px 34px 46px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
+.dashboard-content--impacts {
+  gap: 0;
+  padding: 0 34px 46px;
+}
+
+.impact-video-panel {
+  margin: 0 -34px;
+  background: var(--crystal-blue);
+  padding: 24px 34px;
+}
+
+.impact-video-panel iframe {
+  width: 100%;
+  height: clamp(430px, 64vh, 760px);
+  display: block;
+  border: 0;
+  background: #111;
+}
+
+.impact-values {
+  padding-top: 28px;
+}
+
+.impact-values__heading {
+  margin-bottom: 25px;
+}
+
+.impact-values__heading h2 {
+  margin: 0 0 5px;
+  font-size: 28px;
+  letter-spacing: -0.025em;
+}
+
+.impact-values__heading p {
+  margin: 0 0 2px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.impact-value-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 22px;
+}
+
+.impact-value-card {
+  min-height: 250px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--white);
+  padding: 17px 18px 21px;
+  box-shadow: var(--shadow);
+}
+
+.impact-value-card__label {
+  display: inline-flex;
+  border-radius: 8px;
+  background: #e8f4fa;
+  color: var(--deep-blue);
+  padding: 9px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.impact-value-card__metric {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 21px 0 5px;
+  font-size: 12px;
+}
+
+.impact-value-card__metric strong {
+  font-size: 30px;
+  letter-spacing: -0.035em;
+}
+
+.impact-value-card__note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.impact-value-card__rows {
+  margin-top: 17px;
+  border-top: 3px solid #f2efe6;
+  padding: 14px 5px 0;
+}
+
+.impact-value-card__rows p {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  margin: 0 0 9px;
+  font-size: 12px;
+}
+
+.impact-value-card__rows span:last-child {
+  text-align: right;
 }
 
 .panel,
@@ -1863,6 +1985,15 @@ input[type="date"] {
   .distribution-panel {
     display: grid;
   }
+
+  .impact-value-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .impact-video-panel iframe {
+    height: auto;
+    aspect-ratio: 16 / 9;
+  }
 }
 
 @media (max-width: 640px) {
@@ -1910,6 +2041,19 @@ input[type="date"] {
   .dashboard-content {
     gap: 16px;
     padding: 22px 12px 34px;
+  }
+
+  .dashboard-content--impacts {
+    padding: 0 12px 34px;
+  }
+
+  .impact-video-panel {
+    margin: 0 -12px;
+    padding: 12px;
+  }
+
+  .impact-values__heading h2 {
+    font-size: 25px;
   }
 
   .panel {

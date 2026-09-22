@@ -1,3 +1,9 @@
+<?php
+declare(strict_types=1);
+
+$homepageCssVersion = (string) filemtime(__DIR__ . '/css/homepage.css');
+$homepageJsVersion = (string) filemtime(__DIR__ . '/js/homepage.js');
+?>
 <!doctype html>
 <html lang="en">
 <head>
@@ -9,19 +15,18 @@
   >
   <title>Bali Water Protection | IDEP Foundation</title>
   <link rel="icon" href="/images/brand/bwp-mark.png" type="image/png">
-  <link rel="stylesheet" href="/main/css/homepage.css">
-  <script src="/main/js/homepage.js" defer></script>
+  <link rel="stylesheet" href="/main/css/homepage.css?v=<?= $homepageCssVersion ?>">
+  <script src="/main/js/homepage.js?v=<?= $homepageJsVersion ?>" defer></script>
 </head>
 <body>
   <header class="site-header">
     <div class="page-shell header-inner">
       <a class="brand" href="#top" aria-label="Bali Water Protection home">
-        <img src="/images/brand/bwp-logo-light.png" alt="Bali Water Protection">
+        <img src="/images/brand/idep-bwp-logo-green.png" alt="IDEP Foundation and Bali Water Protection">
       </a>
 
       <nav class="main-nav" aria-label="Main navigation">
-        <a href="#impact">Impact</a>
-        <a class="button button-primary button-small" href="/main/login.php">View Dashboard</a>
+        <a class="button button-primary button-small" href="https://idepfoundation.org/donate/">Donate</a>
         <a class="button button-primary button-small" href="/main/login.php">Login</a>
       </nav>
     </div>
@@ -31,7 +36,6 @@
     <section class="hero" id="top">
       <div class="page-shell hero-inner">
         <div class="hero-copy">
-          <p class="eyebrow">IDEP Foundation · Bali, Indonesia</p>
           <h1>Bali Water Protection</h1>
           <p class="hero-lead">
             Restoring groundwater resilience through recharge wells, local stewardship,
@@ -43,8 +47,8 @@
           </p>
 
           <div class="hero-actions">
-            <a class="button button-primary" href="/main/login.php">View Dashboard</a>
-            <a class="button button-secondary" href="#impact">See Impact</a>
+            <a class="button button-primary" href="/main/public-dashboard.php">View Dashboard</a>
+            <a class="button button-secondary" href="/main/public-impacts.php">See Impact</a>
           </div>
         </div>
 
@@ -70,42 +74,33 @@
         <div class="card-grid impact-grid">
           <article class="impact-card reveal">
             <span class="card-label">People Supported</span>
-            <div class="card-lines">
-              <p><strong>~498K Individuals <span aria-hidden="true">♟</span></strong></p>
-              <p><strong>~124K Families <span aria-hidden="true">♟♟</span></strong></p>
-              <p><span class="card-note">Basic annual water needs</span></p>
-              <p>Ubud - Families like Komong</p>
-              <p>City - One star individual loved our wells, Udayna...</p>
+            <p class="feature-metric"><strong>~498K</strong> <span>People</span></p>
+            <p class="card-note">Equal to about 124K families</p>
+            <div class="card-lines card-lines--rows">
+              <p><span>Ubud</span><span>Testimonial or Figure</span></p>
+              <p><span>City</span><span>Testimonial or Figure</span></p>
             </div>
-            <a class="read-more" href="#sustainability">Read more <span class="arrow" aria-hidden="true"></span></a>
           </article>
 
           <article class="impact-card reveal">
             <span class="card-label">Total Litres Absorbed</span>
-            <p class="feature-metric">
-              <strong>9.1B L</strong> <span>Restored Annually <span aria-hidden="true">💧</span></span>
-            </p>
-            <div class="card-lines">
-              <p><span class="card-note">Estimated groundwater recharge</span></p>
-              <p>Ubud - 500L Restored</p>
-              <p>City - 1000L Restored</p>
-              <p>City - 600L Restored</p>
+            <p class="feature-metric"><strong>9.1B L</strong> <span>Restored Annually</span></p>
+            <p class="card-note">Estimated groundwater recharge</p>
+            <div class="card-lines card-lines--rows">
+              <p><span>Ubud</span><span>500L Restored</span></p>
+              <p><span>City</span><span>1000L Restored</span></p>
             </div>
-            <a class="read-more" href="#sustainability">Read more <span class="arrow" aria-hidden="true"></span></a>
           </article>
 
           <article class="impact-card reveal">
             <span class="card-label">Total Wells</span>
-            <p class="feature-metric">
-              <strong>76</strong> <span>Recharge Wells <span aria-hidden="true">⚒</span></span>
-            </p>
-            <div class="card-lines">
-              <p><span class="card-note">Current programme scale</span></p>
-              <p>23 in Ubud</p>
-              <p>5 in Jembrana</p>
-              <p>2 in Penglipuran</p>
+            <p class="feature-metric"><strong>76</strong> <span>Recharge Wells</span></p>
+            <p class="card-note">XX Villages, XX Cities</p>
+            <div class="card-lines card-lines--rows">
+              <p><span>Ubud</span><span>23</span></p>
+              <p><span>Jembrana</span><span>5</span></p>
+              <p><span>Penglipuran</span><span>2</span></p>
             </div>
-            <a class="read-more" href="#sustainability">Read more <span class="arrow" aria-hidden="true"></span></a>
           </article>
         </div>
       </div>
@@ -127,7 +122,7 @@
               groundwater reserves, reduce local flooding, and create measurable benefits that can be
               translated into community water security metrics.
             </div>
-            <a class="button button-primary button-small card-cta" href="/main/login.php">Learn More</a>
+            <a class="button button-primary button-small card-cta" href="/main/public-impacts.php">Learn More</a>
           </article>
 
           <article class="information-card reveal">
