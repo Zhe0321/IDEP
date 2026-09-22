@@ -66,6 +66,10 @@ input[type="date"] {
   padding: 28px 28px 25px;
 }
 
+body[data-page="impacts"] .sidebar {
+  border-right: 1px solid rgba(255, 255, 255, 0.8);
+}
+
 .sidebar-logo {
   width: 214px;
   margin: 5px auto 26px;
