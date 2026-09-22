@@ -1,3 +1,9 @@
+<?php
+declare(strict_types=1);
+
+$loginCssVersion = (string) filemtime(__DIR__ . '/css/login.css');
+$loginJsVersion = (string) filemtime(__DIR__ . '/js/login.js');
+?>
 <!doctype html>
 <html lang="en">
 <head>
@@ -9,14 +15,14 @@
   >
   <title>Sign in | Bali Water Protection</title>
   <link rel="icon" href="/images/brand/bwp-mark.png" type="image/png">
-  <link rel="stylesheet" href="/main/css/login.css">
-  <script src="/main/js/login.js" defer></script>
+  <link rel="stylesheet" href="/main/css/login.css?v=<?= $loginCssVersion ?>">
+  <script src="/main/js/login.js?v=<?= $loginJsVersion ?>" defer></script>
 </head>
 <body>
   <main class="auth-layout">
     <section class="auth-intro" aria-labelledby="intro-title">
       <a class="intro-logo" href="/" aria-label="Bali Water Protection home">
-        <img src="/images/brand/bwp-logo-dark.png" alt="Bali Water Protection">
+        <img src="/images/brand/idep-bwp-logo-white.png" alt="IDEP Foundation and Bali Water Protection">
       </a>
 
       <div class="intro-content">
@@ -49,12 +55,12 @@
 
         <form class="login-form" id="manager-login" action="/main/api/login.php" method="post">
           <div class="form-field">
-            <label for="username">Username</label>
+            <label for="username">Email address</label>
             <input
               id="username"
               name="username"
               type="text"
-              placeholder="Enter your username"
+              placeholder="name@organisation.org"
               autocomplete="username"
               required
             >
@@ -85,7 +91,7 @@
           <p>Public users see three monitoring pages. Managers receive the full operational workspace.</p>
         </aside>
 
-        <a class="back-link" href="/index.php#impact">Back to Impact</a>
+        <a class="back-link" href="/main/public-impacts.php">Back to Impact</a>
       </div>
     </section>
   </main>
