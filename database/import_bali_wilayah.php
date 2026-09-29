@@ -14,9 +14,22 @@ function readCsv(string $path): array
     }
     $rows = [];
     $handle = fopen($path, 'r');
-    $header = fgetcsv($handle);
-    while (($row = fgetcsv($handle)) !== false) {
-        $rows[] = array_combine($header, $row);
+    if ($handle === false) {
+        throw new RuntimeException("Unable to open file: {$path}");
+    }
+    $header = fgetcsv($handle, null, ',', '"', '\\');
+    if ($header === false) {
+        fclose($handle);
+        throw new RuntimeException("CSV header is missing: {$path}");
+    }
+    while (($row = fgetcsv($handle, null, ',', '"', '\\')) !== false) {
+        if ($row === [null] || count($row) !== count($header)) {
+            continue;
+        }
+        $combined = array_combine($header, $row);
+        if ($combined !== false) {
+            $rows[] = $combined;
+        }
     }
     fclose($handle);
     return $rows;
@@ -44,70 +57,91 @@ try {
         throw new RuntimeException('Bali not found in provinces.csv');
     }
 
-    $stmt = $pdo->prepare(
-        "INSERT INTO province (code, name, status) VALUES (:code, :name, 1)"
-    );
-    $stmt->execute([':code' => $baliRow['id'], ':name' => $baliRow['name']]);
-    $newProvinceId = (int)$pdo->lastInsertId();
-    echo "Inserted province: {$baliRow['name']} (new id {$newProvinceId})\n";
+    $findProvince = $pdo->prepare("SELECT id FROM province WHERE code = :code LIMIT 1");
+    $findProvince->execute([':code' => $baliRow['id']]);
+    $newProvinceId = (int)($findProvince->fetchColumn() ?: 0);
+    if ($newProvinceId === 0) {
+        $stmt = $pdo->prepare(
+            "INSERT INTO province (code, name, status) VALUES (:code, :name, 1)"
+        );
+        $stmt->execute([':code' => $baliRow['id'], ':name' => $baliRow['name']]);
+        $newProvinceId = (int)$pdo->lastInsertId();
+    }
+    echo "Province ready: {$baliRow['name']} (id {$newProvinceId})\n";
 
     // 2. Regencies -> district_city, filtered to Bali
     $regencyIdMap = [];
     $insertRegency = $pdo->prepare(
         "INSERT INTO district_city (code, name, province_id, status) VALUES (:code, :name, :province_id, 1)"
     );
+    $findRegency = $pdo->prepare("SELECT id FROM district_city WHERE code = :code LIMIT 1");
     $baliRegencyCount = 0;
     foreach ($regencies as $r) {
         if ($r['province_id'] !== BALI_PROVINCE_ID) {
             continue;
         }
-        $insertRegency->execute([
-            ':code'       => $r['id'],
-            ':name'       => $r['name'],
-            ':province_id'=> $newProvinceId,
-        ]);
-        $regencyIdMap[$r['id']] = (int)$pdo->lastInsertId();
+        $findRegency->execute([':code' => $r['id']]);
+        $regencyId = (int)($findRegency->fetchColumn() ?: 0);
+        if ($regencyId === 0) {
+            $insertRegency->execute([
+                ':code'       => $r['id'],
+                ':name'       => $r['name'],
+                ':province_id'=> $newProvinceId,
+            ]);
+            $regencyId = (int)$pdo->lastInsertId();
+        }
+        $regencyIdMap[$r['id']] = $regencyId;
         $baliRegencyCount++;
     }
-    echo "Inserted {$baliRegencyCount} regencies/cities\n";
+    echo "Prepared {$baliRegencyCount} regencies/cities\n";
 
     // 3. Districts -> sub_district, filtered to Bali regencies
     $districtIdMap = [];
     $insertDistrict = $pdo->prepare(
         "INSERT INTO sub_district (code, name, district_id, status) VALUES (:code, :name, :district_id, 1)"
     );
+    $findDistrict = $pdo->prepare("SELECT id FROM sub_district WHERE code = :code LIMIT 1");
     $baliDistrictCount = 0;
     foreach ($districts as $d) {
         if (!isset($regencyIdMap[$d['regency_id']])) {
             continue;
         }
-        $insertDistrict->execute([
-            ':code'        => $d['id'],
-            ':name'        => $d['name'],
-            ':district_id' => $regencyIdMap[$d['regency_id']],
-        ]);
-        $districtIdMap[$d['id']] = (int)$pdo->lastInsertId();
+        $findDistrict->execute([':code' => $d['id']]);
+        $districtId = (int)($findDistrict->fetchColumn() ?: 0);
+        if ($districtId === 0) {
+            $insertDistrict->execute([
+                ':code'        => $d['id'],
+                ':name'        => $d['name'],
+                ':district_id' => $regencyIdMap[$d['regency_id']],
+            ]);
+            $districtId = (int)$pdo->lastInsertId();
+        }
+        $districtIdMap[$d['id']] = $districtId;
         $baliDistrictCount++;
     }
-    echo "Inserted {$baliDistrictCount} districts/sub-districts\n";
+    echo "Prepared {$baliDistrictCount} districts/sub-districts\n";
 
     // 4. Villages, filtered to Bali districts
     $insertVillage = $pdo->prepare(
         "INSERT INTO village (code, name, sub_district_id, status) VALUES (:code, :name, :sub_district_id, 1)"
     );
+    $findVillage = $pdo->prepare("SELECT id FROM village WHERE code = :code LIMIT 1");
     $baliVillageCount = 0;
     foreach ($villages as $v) {
         if (!isset($districtIdMap[$v['district_id']])) {
             continue;
         }
-        $insertVillage->execute([
-            ':code'            => $v['id'],
-            ':name'            => $v['name'],
-            ':sub_district_id' => $districtIdMap[$v['district_id']],
-        ]);
+        $findVillage->execute([':code' => $v['id']]);
+        if (!$findVillage->fetchColumn()) {
+            $insertVillage->execute([
+                ':code'            => $v['id'],
+                ':name'            => $v['name'],
+                ':sub_district_id' => $districtIdMap[$v['district_id']],
+            ]);
+        }
         $baliVillageCount++;
     }
-    echo "Inserted {$baliVillageCount} villages\n";
+    echo "Prepared {$baliVillageCount} villages\n";
 
     $pdo->commit();
     echo "\n✅ Bali location hierarchy imported successfully.\n";

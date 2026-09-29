@@ -134,9 +134,15 @@ try {
     $pdo = idepDatabase();
     $hardwareRecords = $pdo->query("
         SELECT
+            w.id AS wellId,
             w.well_name AS name,
             COALESCE(dc.name, '—') AS city,
             COALESCE(s.id_device, '—') AS mac,
+            s.id_device AS sensorDeviceId,
+            w.village_id AS villageId,
+            sd.id AS subDistrictId,
+            dc.id AS districtId,
+            p.id AS provinceId,
             w.installation_date AS date,
             CASE
                 WHEN w.installation_date IS NOT NULL AND w.installation_date != ''
@@ -151,19 +157,11 @@ try {
         LEFT JOIN village v ON v.id = w.village_id
         LEFT JOIN sub_district sd ON sd.id = v.sub_district_id
         LEFT JOIN district_city dc ON dc.id = sd.district_id
+        LEFT JOIN province p ON p.id = dc.province_id
         LEFT JOIN sensors s ON s.id = w.sensor_id
         ORDER BY w.id DESC
     ")->fetchAll();
 } catch (Throwable $e) {
     $hardwareRecords = [];
-    $hardwareQueryErrorMessage = $e->getMessage();
-}
-
-// TEMP DEBUG
-if (isset($_GET['debug_hw'])) {
-    echo '<pre style="background:#efe;padding:10px;position:relative;z-index:9999;">';
-    echo "Error: " . ($hardwareQueryErrorMessage ?? 'none') . "\n\n";
-    echo "Row count: " . count($hardwareRecords) . "\n\n";
-    print_r($hardwareRecords);
-    echo '</pre>';
+    error_log('Hardware query failed: ' . $e->getMessage());
 }

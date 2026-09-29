@@ -1,7 +1,8 @@
 <?php
 declare(strict_types=1);
-header('Content-Type: application/json');
+require __DIR__ . '/includes/admin-endpoint.php';
 require __DIR__ . '/../database/db.php';
+requireAdminJson();
 
 $pdo = idepDatabase();
 $subDistrictId = (int)($_GET['sub_district_id'] ?? 0);
