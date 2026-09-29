@@ -15,3 +15,14 @@ function requireAdminJson(): void
         exit;
     }
 }
+
+function requireAdministratorJson(): void
+{
+    requireAdminJson();
+
+    if (($_SESSION['idep_role'] ?? '') !== 'admin') {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'message' => 'Administrator access is required.']);
+        exit;
+    }
+}

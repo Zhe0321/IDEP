@@ -1033,3 +1033,102 @@ hardwareTable?.addEventListener("click", async (event) => {
     }
   }
 });
+
+const userForm = document.querySelector("[data-user-form]");
+const userTable = document.querySelector("[data-user-table]");
+const userFormTitle = document.querySelector("[data-user-form-title]");
+const userSubmitButton = document.querySelector("[data-user-submit]");
+const userCancelButton = document.querySelector("[data-user-cancel]");
+const userMessage = document.querySelector("[data-user-message]");
+const passwordHelp = document.querySelector("[data-password-help]");
+
+function setUserFormMessage(message, isError = false) {
+  if (!userMessage) return;
+  userMessage.textContent = message;
+  userMessage.classList.toggle("is-error", isError);
+  userMessage.hidden = false;
+}
+
+function resetUserForm() {
+  if (!(userForm instanceof HTMLFormElement)) return;
+  userForm.reset();
+  const userId = userForm.elements.namedItem("user_id");
+  if (userId instanceof HTMLInputElement) userId.value = "";
+  if (userFormTitle) userFormTitle.textContent = "Create user";
+  if (userSubmitButton) userSubmitButton.textContent = "Save user";
+  if (userCancelButton) userCancelButton.hidden = true;
+  if (passwordHelp) passwordHelp.textContent = "Required for a new user.";
+  if (userMessage) userMessage.hidden = true;
+}
+
+userCancelButton?.addEventListener("click", resetUserForm);
+
+userTable?.addEventListener("click", async (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLElement) || !(userForm instanceof HTMLFormElement)) return;
+  const row = target.closest("[data-user-row]");
+  if (!(row instanceof HTMLTableRowElement)) return;
+
+  if (target.closest("[data-user-edit]")) {
+    const setValue = (name, value) => {
+      const field = userForm.elements.namedItem(name);
+      if (field instanceof HTMLInputElement || field instanceof HTMLSelectElement) {
+        field.value = value ?? "";
+      }
+    };
+    setValue("user_id", row.dataset.userId);
+    setValue("name", row.dataset.name);
+    setValue("username", row.dataset.username);
+    setValue("email", row.dataset.email);
+    setValue("status", row.dataset.role);
+    setValue("password", "");
+    if (userFormTitle) userFormTitle.textContent = `Edit ${row.dataset.name || "user"}`;
+    if (userSubmitButton) userSubmitButton.textContent = "Update user";
+    if (userCancelButton) userCancelButton.hidden = false;
+    if (passwordHelp) passwordHelp.textContent = "Leave blank to keep the current password.";
+    if (userMessage) userMessage.hidden = true;
+    userForm.scrollIntoView({ behavior: "smooth", block: "start" });
+    return;
+  }
+
+  const toggleButton = target.closest("[data-user-toggle]");
+  if (!(toggleButton instanceof HTMLButtonElement) || toggleButton.disabled) return;
+  const action = toggleButton.dataset.action;
+  if (!window.confirm(`${action === "activate" ? "Activate" : "Deactivate"} ${row.dataset.name || "this user"}?`)) return;
+
+  const formData = new FormData();
+  formData.set("user_id", row.dataset.userId ?? "");
+  formData.set("action", action ?? "");
+  toggleButton.disabled = true;
+  try {
+    await requestJson("/main/admin-user-toggle.php", { method: "POST", body: formData });
+    window.location.reload();
+  } catch (error) {
+    toggleButton.disabled = false;
+    setUserFormMessage(error.message, true);
+  }
+});
+
+userForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!(userForm instanceof HTMLFormElement)) return;
+
+  const formData = new FormData(userForm);
+  if (userSubmitButton) {
+    userSubmitButton.disabled = true;
+    userSubmitButton.textContent = "Saving...";
+  }
+  if (userMessage) userMessage.hidden = true;
+
+  try {
+    await requestJson("/main/admin-user-save.php", { method: "POST", body: formData });
+    setUserFormMessage("User saved in the database. Reloading...");
+    window.setTimeout(() => window.location.reload(), 450);
+  } catch (error) {
+    if (userSubmitButton) {
+      userSubmitButton.disabled = false;
+      userSubmitButton.textContent = formData.get("user_id") ? "Update user" : "Save user";
+    }
+    setUserFormMessage(error.message, true);
+  }
+});

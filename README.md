@@ -17,15 +17,21 @@ Open the website at:
 http://127.0.0.1:8000
 ```
 
-For local administrator testing, use:
+The demonstration accounts are stored in the SQLite `user` table:
 
 ```text
+Administrator
 Username: admin123
 Password: admin123
+
+Manager
+Username: manager123
+Password: manager123
 ```
 
-The demonstration account only works on `localhost`. On a shared/public URL,
-administrator login uses active accounts from the SQLite `user` table.
+The administrator sees every operational page plus User Management. The manager
+sees every operational page except User Management. Public users keep the same
+read-only access and do not need an account.
 
 Press `Control + C` to stop the server.
 
@@ -46,6 +52,8 @@ Share the generated `https://...trycloudflare.com` link. The link stops working 
 - Newly registered wells with coordinates are included in the dashboard and map data.
 - Generated reports and settings persist in the current browser.
 - Public users do not need an account; administrator pages require a server session.
+- User roles are stored in `user.status` as `admin` or `manager`; account access is
+  enabled when `deleted_at` is empty.
 
 ## Site Registration database setup
 
@@ -55,6 +63,7 @@ For an existing local database, run these commands once after pulling the Site R
 php database/add_missing_columns.php
 php database/add_photo_column.php
 php database/import_bali_wilayah.php
+php database/migrate_user_roles.php
 ```
 
 The migration and import commands are safe to run again. The SQLite database file is intentionally ignored by Git, so each environment must run the setup against its own database.

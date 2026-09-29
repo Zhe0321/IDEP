@@ -52,7 +52,7 @@ CREATE TABLE user (
     name TEXT NOT NULL,
     email TEXT NOT NULL UNIQUE,
     password TEXT NOT NULL,
-    status INTEGER,
+    status TEXT NOT NULL DEFAULT 'manager',     -- admin or manager
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,  
     updated_at TEXT,
     deleted_at TEXT,
