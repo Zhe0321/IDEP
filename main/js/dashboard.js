@@ -715,7 +715,10 @@ const closeHardwareButton = document.querySelector("[data-close-hardware-form]")
 const hardwareTable = document.querySelector("[data-hardware-table]");
 const hardwareSubmitButton = document.querySelector("[data-hardware-submit]");
 const hardwareMessage = document.querySelector("[data-hardware-message]");
-const hardwareStorageKey = "idep-hardware-sites";
+const provinceSelect = document.querySelector("#province_id");
+const districtSelect = document.querySelector("#district_id");
+const subDistrictSelect = document.querySelector("#sub_district_id");
+const villageSelect = document.querySelector("#village_id");
 let editingHardwareRow = null;
 
 function setHardwareFormOpen(open) {
@@ -733,9 +736,14 @@ function setHardwareFormOpen(open) {
 function resetHardwareEditor() {
   if (hardwareForm instanceof HTMLFormElement) {
     hardwareForm.reset();
+    setHardwareFormValue("well_id", "");
   }
+  resetLocationSelect(districtSelect, "Select province first");
+  resetLocationSelect(subDistrictSelect, "Select district first");
+  resetLocationSelect(villageSelect, "Select sub-district first");
   editingHardwareRow = null;
   if (hardwareSubmitButton) {
+    hardwareSubmitButton.disabled = false;
     hardwareSubmitButton.textContent = "Add device";
   }
   if (hardwareMessage) {
@@ -754,18 +762,13 @@ closeHardwareButton?.addEventListener("click", () => {
 });
 
 function updateHardwareCount() {
-  const rows = Array.from(hardwareTable?.querySelectorAll("tr") ?? []);
+  const rows = Array.from(hardwareTable?.querySelectorAll("[data-hardware-row]") ?? []);
   const count = rows.length;
   const visibleCount = rows.filter((row) => !row.hidden).length;
   const counter = document.querySelector("[data-hardware-count]");
   if (counter) {
     counter.textContent = count === 0 ? "No entries" : `Showing ${visibleCount} of ${count} entries`;
   }
-}
-
-function formatHardwareDate(date) {
-  const parts = String(date).split("-");
-  return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : String(date || "Today");
 }
 
 function setHardwareFormValue(name, value) {
@@ -778,21 +781,117 @@ function setHardwareFormValue(name, value) {
   }
 }
 
-function startHardwareEdit(row) {
+function resetLocationSelect(select, placeholder) {
+  if (!(select instanceof HTMLSelectElement)) {
+    return;
+  }
+  select.replaceChildren(new Option(placeholder, ""));
+  select.disabled = true;
+}
+
+function populateLocationSelect(select, items, placeholder, selectedValue = "") {
+  if (!(select instanceof HTMLSelectElement)) {
+    return;
+  }
+  select.replaceChildren(new Option(placeholder, ""));
+  items.forEach((item) => select.add(new Option(item.name, String(item.id))));
+  select.disabled = false;
+  select.value = String(selectedValue || "");
+}
+
+async function requestJson(url, options = {}) {
+  const response = await fetch(url, options);
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(result.message || "The request could not be completed.");
+  }
+  return result;
+}
+
+async function loadDistricts(provinceId, selectedValue = "") {
+  resetLocationSelect(districtSelect, "Loading districts...");
+  resetLocationSelect(subDistrictSelect, "Select district first");
+  resetLocationSelect(villageSelect, "Select sub-district first");
+  if (!provinceId) return;
+  const items = await requestJson(`/main/ajax-get-districts.php?province_id=${encodeURIComponent(provinceId)}`);
+  populateLocationSelect(districtSelect, items, "Select district/city", selectedValue);
+}
+
+async function loadSubDistricts(districtId, selectedValue = "") {
+  resetLocationSelect(subDistrictSelect, "Loading sub-districts...");
+  resetLocationSelect(villageSelect, "Select sub-district first");
+  if (!districtId) return;
+  const items = await requestJson(`/main/ajax-get-subdistricts.php?district_id=${encodeURIComponent(districtId)}`);
+  populateLocationSelect(subDistrictSelect, items, "Select sub-district", selectedValue);
+}
+
+async function loadVillages(subDistrictId, selectedValue = "") {
+  resetLocationSelect(villageSelect, "Loading villages...");
+  if (!subDistrictId) return;
+  const items = await requestJson(`/main/ajax-get-villages.php?sub_district_id=${encodeURIComponent(subDistrictId)}`);
+  populateLocationSelect(villageSelect, items, "Select village", selectedValue);
+}
+
+provinceSelect?.addEventListener("change", async () => {
+  try {
+    await loadDistricts(provinceSelect.value);
+  } catch (error) {
+    if (hardwareMessage) {
+      hardwareMessage.textContent = error.message;
+      hardwareMessage.hidden = false;
+    }
+  }
+});
+
+districtSelect?.addEventListener("change", async () => {
+  try {
+    await loadSubDistricts(districtSelect.value);
+  } catch (error) {
+    if (hardwareMessage) {
+      hardwareMessage.textContent = error.message;
+      hardwareMessage.hidden = false;
+    }
+  }
+});
+
+subDistrictSelect?.addEventListener("change", async () => {
+  try {
+    await loadVillages(subDistrictSelect.value);
+  } catch (error) {
+    if (hardwareMessage) {
+      hardwareMessage.textContent = error.message;
+      hardwareMessage.hidden = false;
+    }
+  }
+});
+
+async function startHardwareEdit(row) {
   if (!(row instanceof HTMLTableRowElement)) {
     return;
   }
 
   editingHardwareRow = row;
   setHardwareFormOpen(true);
+  setHardwareFormValue("well_id", row.dataset.wellId);
   setHardwareFormValue("name", row.dataset.name);
+  setHardwareFormValue("sensor_id", row.dataset.sensorId);
   setHardwareFormValue("installer", row.dataset.installer);
   setHardwareFormValue("type", row.dataset.type);
   setHardwareFormValue("date", row.dataset.date);
   setHardwareFormValue("longitude", row.dataset.longitude);
-  setHardwareFormValue("city", row.dataset.city);
   setHardwareFormValue("latitude", row.dataset.latitude);
-  setHardwareFormValue("mac", row.dataset.mac);
+  setHardwareFormValue("province_id", row.dataset.provinceId);
+
+  try {
+    await loadDistricts(row.dataset.provinceId, row.dataset.districtId);
+    await loadSubDistricts(row.dataset.districtId, row.dataset.subDistrictId);
+    await loadVillages(row.dataset.subDistrictId, row.dataset.villageId);
+  } catch (error) {
+    if (hardwareMessage) {
+      hardwareMessage.textContent = error.message;
+      hardwareMessage.hidden = false;
+    }
+  }
 
   if (hardwareSubmitButton) {
     hardwareSubmitButton.textContent = "Update device";
@@ -804,67 +903,6 @@ function startHardwareEdit(row) {
   hardwareForm?.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
-function updateHardwareRow(row, values) {
-  row.dataset.hardwareRow = "";
-  row.dataset.name = values.name;
-  row.dataset.city = values.city;
-  row.dataset.mac = values.mac;
-  row.dataset.date = values.date;
-  row.dataset.installer = values.installer;
-  row.dataset.type = values.type;
-  row.dataset.longitude = values.longitude;
-  row.dataset.latitude = values.latitude;
-
-  while (row.cells.length < 5) {
-    row.insertCell();
-  }
-  row.cells[0].textContent = `${values.name} - ${values.city}`;
-  row.cells[1].textContent = `MAC: ${values.mac}`;
-  row.cells[2].textContent = formatHardwareDate(values.date);
-  row.cells[3].textContent = values.installer || "—";
-
-  const actionCell = row.cells[4];
-  actionCell.textContent = "";
-  const editButton = document.createElement("button");
-  editButton.type = "button";
-  editButton.className = "row-icon-button";
-  editButton.dataset.editRow = "";
-  editButton.setAttribute("aria-label", `Edit ${values.name}`);
-  editButton.textContent = "✎";
-  const removeButton = document.createElement("button");
-  removeButton.type = "button";
-  removeButton.className = "row-icon-button";
-  removeButton.dataset.removeRow = "";
-  removeButton.setAttribute("aria-label", `Delete ${values.name}`);
-  removeButton.textContent = "▣";
-  actionCell.append(editButton, removeButton);
-}
-
-function hardwareRowData(row) {
-  return {
-    name: row.dataset.name ?? "",
-    city: row.dataset.city ?? "",
-    mac: row.dataset.mac ?? "",
-    date: row.dataset.date ?? "",
-    installer: row.dataset.installer ?? "",
-    type: row.dataset.type ?? "",
-    longitude: row.dataset.longitude ?? "",
-    latitude: row.dataset.latitude ?? "",
-  };
-}
-
-function persistHardwareRows() {
-  if (!(hardwareTable instanceof HTMLTableSectionElement)) {
-    return;
-  }
-  try {
-    const rows = Array.from(hardwareTable.querySelectorAll("tr")).map(hardwareRowData);
-    localStorage.setItem(hardwareStorageKey, JSON.stringify(rows));
-  } catch {
-    // Keep the current-page edits if browser storage is unavailable.
-  }
-}
-
 function refreshHardwareNameOptions() {
   const select = document.querySelector('[data-hardware-filter="name"]');
   if (!(select instanceof HTMLSelectElement) || !(hardwareTable instanceof HTMLTableSectionElement)) {
@@ -872,7 +910,7 @@ function refreshHardwareNameOptions() {
   }
   const selected = select.value;
   select.replaceChildren(new Option("All Wells in City", ""));
-  Array.from(hardwareTable.querySelectorAll("tr")).forEach((row) => {
+  Array.from(hardwareTable.querySelectorAll("[data-hardware-row]")).forEach((row) => {
     select.add(new Option(`${row.dataset.name} · ${row.dataset.city}`, row.dataset.name));
   });
   if (Array.from(select.options).some((option) => option.value === selected)) {
@@ -894,7 +932,7 @@ function applyHardwareFilters() {
   const endDate = valueFor("end-date");
   const query = searchInput?.value.trim().toLowerCase() ?? "";
 
-  Array.from(hardwareTable.querySelectorAll("tr")).forEach((row) => {
+  Array.from(hardwareTable.querySelectorAll("[data-hardware-row]")).forEach((row) => {
     const searchable = `${row.dataset.name} ${row.dataset.city} ${row.dataset.mac} ${row.dataset.installer}`.toLowerCase();
     const matches = (!city || row.dataset.city === city)
       && (!name || row.dataset.name === name)
@@ -907,18 +945,6 @@ function applyHardwareFilters() {
 }
 
 if (hardwareTable instanceof HTMLTableSectionElement) {
-  try {
-    const storedRows = localStorage.getItem(hardwareStorageKey);
-    if (storedRows !== null) {
-      const records = JSON.parse(storedRows);
-      if (Array.isArray(records)) {
-        hardwareTable.textContent = "";
-        records.forEach((record) => updateHardwareRow(hardwareTable.insertRow(), record));
-      }
-    }
-  } catch {
-    // Keep the server-provided hardware records.
-  }
   refreshHardwareNameOptions();
   applyHardwareFilters();
 }
@@ -928,47 +954,46 @@ document.querySelectorAll("[data-hardware-filter]").forEach((field) => {
 });
 searchInput?.addEventListener("input", applyHardwareFilters);
 
-hardwareForm?.addEventListener("submit", (event) => {
+hardwareForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
-  if (!(hardwareForm instanceof HTMLFormElement) || !(hardwareTable instanceof HTMLTableSectionElement)) {
+  if (!(hardwareForm instanceof HTMLFormElement)) {
     return;
   }
 
   const formData = new FormData(hardwareForm);
-  const values = {
-    name: String(formData.get("name") ?? ""),
-    installer: String(formData.get("installer") ?? ""),
-    type: String(formData.get("type") ?? ""),
-    date: String(formData.get("date") ?? ""),
-    longitude: String(formData.get("longitude") ?? ""),
-    city: String(formData.get("city") ?? ""),
-    latitude: String(formData.get("latitude") ?? ""),
-    mac: String(formData.get("mac") ?? ""),
-  };
-
-  const wasEditing = editingHardwareRow instanceof HTMLTableRowElement;
-  const row = wasEditing ? editingHardwareRow : hardwareTable.insertRow();
-  updateHardwareRow(row, values);
-
-  hardwareForm.reset();
-  editingHardwareRow = null;
   if (hardwareSubmitButton) {
     hardwareSubmitButton.disabled = true;
     hardwareSubmitButton.textContent = "Saving...";
   }
   if (hardwareMessage) {
-    hardwareMessage.textContent = wasEditing
-      ? "Device updated and saved in this browser."
-      : "Device added and saved in this browser.";
-    hardwareMessage.hidden = false;
+    hardwareMessage.hidden = true;
   }
-  persistHardwareRows();
-  refreshHardwareNameOptions();
-  applyHardwareFilters();
-  updateHardwareCount();
+
+  try {
+    await requestJson("/main/admin-site-registration-save.php", {
+      method: "POST",
+      body: formData,
+    });
+    if (hardwareMessage) {
+      hardwareMessage.textContent = editingHardwareRow
+        ? "Site updated in the database. Reloading..."
+        : "Site saved to the database. Reloading...";
+      hardwareMessage.hidden = false;
+    }
+    window.setTimeout(() => window.location.reload(), 500);
+  } catch (error) {
+    if (hardwareSubmitButton) {
+      hardwareSubmitButton.disabled = false;
+      hardwareSubmitButton.textContent = editingHardwareRow ? "Update device" : "Add device";
+    }
+    if (hardwareMessage) {
+      hardwareMessage.textContent = error.message;
+      hardwareMessage.hidden = false;
+    }
+  }
 });
 
-hardwareTable?.addEventListener("click", (event) => {
+hardwareTable?.addEventListener("click", async (event) => {
   const target = event.target;
   if (!(target instanceof HTMLElement)) {
     return;
@@ -976,18 +1001,35 @@ hardwareTable?.addEventListener("click", (event) => {
 
   const row = target.closest("tr");
   if (target.closest("[data-edit-row]")) {
-    startHardwareEdit(row);
+    await startHardwareEdit(row);
     return;
   }
 
   if (target.closest("[data-remove-row]")) {
-    if (row === editingHardwareRow) {
-      resetHardwareEditor();
+    if (!(row instanceof HTMLTableRowElement) || !row.dataset.wellId) {
+      return;
     }
-    row?.remove();
-    persistHardwareRows();
-    refreshHardwareNameOptions();
-    applyHardwareFilters();
-    updateHardwareCount();
+    if (!window.confirm(`Delete ${row.dataset.name || "this site"}?`)) {
+      return;
+    }
+    const formData = new FormData();
+    formData.set("well_id", row.dataset.wellId);
+    try {
+      await requestJson("/main/admin-site-registration-delete.php", {
+        method: "POST",
+        body: formData,
+      });
+      row.remove();
+      if (row === editingHardwareRow) {
+        resetHardwareEditor();
+      }
+      refreshHardwareNameOptions();
+      applyHardwareFilters();
+    } catch (error) {
+      if (hardwareMessage) {
+        hardwareMessage.textContent = error.message;
+        hardwareMessage.hidden = false;
+      }
+    }
   }
 });

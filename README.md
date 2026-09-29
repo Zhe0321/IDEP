@@ -42,5 +42,19 @@ Share the generated `https://...trycloudflare.com` link. The link stops working 
 ## Current data behaviour
 
 - Dashboard and Historical Data read sensor measurements from `database/idep_groundwater.db`.
-- Site Registration, generated reports, and settings persist in the current browser until their shared database tables are finalised.
+- Site Registration reads and writes sensors, wells, and the Bali location hierarchy in `database/idep_groundwater.db`.
+- Newly registered wells with coordinates are included in the dashboard and map data.
+- Generated reports and settings persist in the current browser.
 - Public users do not need an account; administrator pages require a server session.
+
+## Site Registration database setup
+
+For an existing local database, run these commands once after pulling the Site Registration changes:
+
+```bash
+php database/add_missing_columns.php
+php database/add_photo_column.php
+php database/import_bali_wilayah.php
+```
+
+The migration and import commands are safe to run again. The SQLite database file is intentionally ignored by Git, so each environment must run the setup against its own database.

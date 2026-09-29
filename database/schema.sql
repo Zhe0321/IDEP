@@ -67,7 +67,7 @@ CREATE TABLE sensors (
     sensor_code TEXT UNIQUE,                    
     sensor_name TEXT NOT NULL,
     sensor_type TEXT,
-    id_device TEXT NOT NULL UNIQUE,             -- ID sent by the sensor/device itself
+    id_device TEXT UNIQUE,                      -- ID sent by the sensor/device itself
     status INTEGER,                             -- sensor status
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT
@@ -82,6 +82,9 @@ CREATE TABLE wells (
     longitude REAL,
     well_depth REAL,                            
     sensor_id INTEGER UNIQUE,                   -- references sensors.id
+    installer_name TEXT,
+    installation_date TEXT,
+    photo_path TEXT,
     status INTEGER,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT,
