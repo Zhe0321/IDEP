@@ -29,7 +29,8 @@ Username: manager123
 Password: manager123
 ```
 
-The administrator sees every operational page plus User Management. The manager
+The administrator sees every operational page plus User Management, where accounts
+can be created, edited, activated, deactivated, or deleted. The manager
 sees every operational page except User Management. Public users keep the same
 read-only access and do not need an account.
 

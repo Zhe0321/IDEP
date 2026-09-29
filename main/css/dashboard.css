@@ -2021,6 +2021,12 @@ body[data-page="impacts"] .sidebar {
   font-size: 11px;
 }
 
+.user-actions .danger-action {
+  border-color: #efc9c5;
+  background: #fff6f5;
+  color: #b83a32;
+}
+
 .primary-action {
   border: 0;
   background: var(--deep-blue);

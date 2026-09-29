@@ -1091,6 +1091,23 @@ userTable?.addEventListener("click", async (event) => {
     return;
   }
 
+  const deleteButton = target.closest("[data-user-delete]");
+  if (deleteButton instanceof HTMLButtonElement && !deleteButton.disabled) {
+    if (!window.confirm(`Permanently delete ${row.dataset.name || "this user"}? This cannot be undone.`)) return;
+    const formData = new FormData();
+    formData.set("user_id", row.dataset.userId ?? "");
+    deleteButton.disabled = true;
+    try {
+      await requestJson("/main/admin-user-delete.php", { method: "POST", body: formData });
+      row.remove();
+      setUserFormMessage("User permanently deleted from the database.");
+    } catch (error) {
+      deleteButton.disabled = false;
+      setUserFormMessage(error.message, true);
+    }
+    return;
+  }
+
   const toggleButton = target.closest("[data-user-toggle]");
   if (!(toggleButton instanceof HTMLButtonElement) || toggleButton.disabled) return;
   const action = toggleButton.dataset.action;

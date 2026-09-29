@@ -81,6 +81,7 @@ try {
                 <td class="user-actions">
                   <button type="button" data-user-edit>Edit</button>
                   <button type="button" data-user-toggle data-action="<?= $isActive ? 'deactivate' : 'activate' ?>" <?= $isCurrentUser ? 'disabled title="You cannot deactivate your own account"' : '' ?>><?= $isActive ? 'Deactivate' : 'Activate' ?></button>
+                  <button class="danger-action" type="button" data-user-delete <?= $isCurrentUser ? 'disabled title="You cannot delete your own account"' : '' ?>>Delete</button>
                 </td>
               </tr>
             <?php endforeach; ?>
