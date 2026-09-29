@@ -681,40 +681,87 @@ function updateHardwareRow(row, values) {
   actionCell.append(editButton, removeButton);
 }
 
-hardwareForm?.addEventListener("submit", (event) => {
+// hardwareForm?.addEventListener("submit", (event) => {
+//   event.preventDefault();
+//   if (!(hardwareForm instanceof HTMLFormElement) || !(hardwareTable instanceof HTMLTableSectionElement)) {
+//     return;
+//   }
+
+//   const formData = new FormData(hardwareForm);
+//   const values = {
+//     name: String(formData.get("name") ?? ""),
+//     installer: String(formData.get("installer") ?? ""),
+//     type: String(formData.get("type") ?? ""),
+//     date: String(formData.get("date") ?? ""),
+//     longitude: String(formData.get("longitude") ?? ""),
+//     city: String(formData.get("city") ?? ""),
+//     latitude: String(formData.get("latitude") ?? ""),
+//     mac: String(formData.get("mac") ?? ""),
+//   };
+
+//   const wasEditing = editingHardwareRow instanceof HTMLTableRowElement;
+//   const row = wasEditing ? editingHardwareRow : hardwareTable.insertRow();
+//   updateHardwareRow(row, values);
+
+//   hardwareForm.reset();
+//   editingHardwareRow = null;
+//   if (hardwareSubmitButton) {
+//     hardwareSubmitButton.textContent = "Add device";
+//   }
+//   if (hardwareMessage) {
+//     hardwareMessage.textContent = wasEditing
+//       ? "Device updated temporarily. Database connection will be added later."
+//       : "Device added temporarily. Database connection will be added later.";
+//     hardwareMessage.hidden = false;
+//   }
+//   updateHardwareCount();
+// });
+
+hardwareForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
-  if (!(hardwareForm instanceof HTMLFormElement) || !(hardwareTable instanceof HTMLTableSectionElement)) {
+  if (!(hardwareForm instanceof HTMLFormElement)) {
     return;
   }
 
   const formData = new FormData(hardwareForm);
-  const values = {
-    name: String(formData.get("name") ?? ""),
-    installer: String(formData.get("installer") ?? ""),
-    type: String(formData.get("type") ?? ""),
-    date: String(formData.get("date") ?? ""),
-    longitude: String(formData.get("longitude") ?? ""),
-    city: String(formData.get("city") ?? ""),
-    latitude: String(formData.get("latitude") ?? ""),
-    mac: String(formData.get("mac") ?? ""),
-  };
 
-  const wasEditing = editingHardwareRow instanceof HTMLTableRowElement;
-  const row = wasEditing ? editingHardwareRow : hardwareTable.insertRow();
-  updateHardwareRow(row, values);
-
-  hardwareForm.reset();
-  editingHardwareRow = null;
   if (hardwareSubmitButton) {
-    hardwareSubmitButton.textContent = "Add device";
+    hardwareSubmitButton.disabled = true;
+    hardwareSubmitButton.textContent = "Saving...";
   }
   if (hardwareMessage) {
-    hardwareMessage.textContent = wasEditing
-      ? "Device updated temporarily. Database connection will be added later."
-      : "Device added temporarily. Database connection will be added later.";
-    hardwareMessage.hidden = false;
+    hardwareMessage.hidden = true;
   }
-  updateHardwareCount();
+
+  try {
+    const response = await fetch("/main/admin-site-registration-save.php", {
+      method: "POST",
+      body: formData,
+    });
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      throw new Error(result.message ?? "Failed to save device.");
+    }
+
+    if (hardwareMessage) {
+      hardwareMessage.textContent = "Device saved successfully. Reloading...";
+      hardwareMessage.hidden = false;
+    }
+
+    // Reload so the Hardware List reflects the real database state
+    window.setTimeout(() => window.location.reload(), 600);
+
+  } catch (error) {
+    if (hardwareSubmitButton) {
+      hardwareSubmitButton.disabled = false;
+      hardwareSubmitButton.textContent = editingHardwareRow ? "Update device" : "Add device";
+    }
+    if (hardwareMessage) {
+      hardwareMessage.textContent = error.message ?? "Something went wrong.";
+      hardwareMessage.hidden = false;
+    }
+  }
 });
 
 hardwareTable?.addEventListener("click", (event) => {

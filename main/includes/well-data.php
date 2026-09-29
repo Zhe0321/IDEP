@@ -2063,3 +2063,68 @@ $wells = [
         'photo' => $wellPhoto,
     ],
 ];
+
+// Merge in wells registered via the admin Site Registration form
+require_once __DIR__ . '/../../database/db.php';
+
+try {
+    $pdo = idepDatabase();
+    $dbWells = $pdo->query("
+        SELECT
+            w.well_code,
+            w.well_name,
+            w.latitude,
+            w.longitude,
+            w.well_depth,
+            w.installer_name,
+            w.installation_date,
+            COALESCE(dc.name, '—') AS city_name,
+            s.id_device AS sensor_device_id
+        FROM wells w
+        LEFT JOIN village v ON v.id = w.village_id
+        LEFT JOIN sub_district sd ON sd.id = v.sub_district_id
+        LEFT JOIN district_city dc ON dc.id = sd.district_id
+        LEFT JOIN sensors s ON s.id = w.sensor_id
+        ORDER BY w.id DESC
+    ")->fetchAll();
+} catch (Throwable $e) {
+    error_log('Well merge query failed: ' . $e->getMessage());
+    $dbWells = [];
+}
+
+foreach ($dbWells as $row) {
+    $installDateIso = $row['installation_date'] ?: null;
+    $installDateDisplay = $installDateIso
+        ? date('d F Y', strtotime($installDateIso))
+        : '—';
+
+    $hasCoords = $row['latitude'] !== null && $row['longitude'] !== null;
+
+    $wells[] = [
+        'id' => $row['well_code'],
+        'deviceId' => $row['sensor_device_id'],
+        'name' => $row['well_name'],
+        'city' => $row['city_name'],
+        'lat' => $hasCoords ? (float)$row['latitude'] : null,
+        'lng' => $hasCoords ? (float)$row['longitude'] : null,
+        'status' => 'no-signal',
+        'statusLabel' => 'No Signal',
+        'startDate' => $installDateDisplay,
+        'startDateISO' => $installDateIso,
+        'endDate' => '—',
+        'endDateISO' => null,
+        'duration' => 'Ongoing',
+        'absorption' => '—',
+        'transmission' => 'No Signal',
+        'lastTransmission' => '—',
+        'wellType' => 'Registered Well',
+        'litresMinute' => '—',
+        'litresHour' => '—',
+        'volume' => '—',
+        'inflow' => '—',
+        'depth' => $row['well_depth'] !== null ? $row['well_depth'] . ' meters' : '—',
+        'address' => $row['city_name'],
+        'photo' => $wellPhoto,
+        'locationPending' => !$hasCoords,
+    ];
+}

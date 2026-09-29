@@ -78,27 +78,43 @@ $generatedReports = [
     ['name' => 'Recharge Well Review', 'period' => 'Q2 2026', 'createdBy' => 'IDEP Team', 'date' => '10 Jul', 'status' => 'Draft', 'export' => 'CSV'],
 ];
 
-$hardwareRecords = [
-    [
-        'name' => 'Well_id1',
-        'city' => 'Badung',
-        'mac' => '00:1B:44:11:3A:29',
-        'date' => '2026-07-20',
-        'displayDate' => '20/07/2026',
-        'installer' => 'PT. Banyu Biru',
-        'type' => 'Type 4',
-        'longitude' => '115.1786',
-        'latitude' => '-8.5819',
-    ],
-    [
-        'name' => 'Well_id2',
-        'city' => 'Bangli',
-        'mac' => '00:3T:45:13:3A:92',
-        'date' => '2026-07-05',
-        'displayDate' => '05/07/2026',
-        'installer' => 'PT. Banyu Biru',
-        'type' => 'Type 3',
-        'longitude' => '115.3542',
-        'latitude' => '-8.4543',
-    ],
-];
+// Hardware records now come from the live database instead of a hardcoded list
+require_once __DIR__ . '/../../database/db.php';
+
+try {
+    $pdo = idepDatabase();
+    $hardwareRecords = $pdo->query("
+        SELECT
+            w.well_name AS name,
+            COALESCE(dc.name, '—') AS city,
+            COALESCE(s.id_device, '—') AS mac,
+            w.installation_date AS date,
+            CASE
+                WHEN w.installation_date IS NOT NULL AND w.installation_date != ''
+                THEN strftime('%d/%m/%Y', w.installation_date)
+                ELSE '—'
+            END AS displayDate,
+            COALESCE(w.installer_name, '—') AS installer,
+            COALESCE(s.sensor_type, '—') AS type,
+            w.longitude,
+            w.latitude
+        FROM wells w
+        LEFT JOIN village v ON v.id = w.village_id
+        LEFT JOIN sub_district sd ON sd.id = v.sub_district_id
+        LEFT JOIN district_city dc ON dc.id = sd.district_id
+        LEFT JOIN sensors s ON s.id = w.sensor_id
+        ORDER BY w.id DESC
+    ")->fetchAll();
+} catch (Throwable $e) {
+    $hardwareRecords = [];
+    $hardwareQueryErrorMessage = $e->getMessage();
+}
+
+// TEMP DEBUG
+if (isset($_GET['debug_hw'])) {
+    echo '<pre style="background:#efe;padding:10px;position:relative;z-index:9999;">';
+    echo "Error: " . ($hardwareQueryErrorMessage ?? 'none') . "\n\n";
+    echo "Row count: " . count($hardwareRecords) . "\n\n";
+    print_r($hardwareRecords);
+    echo '</pre>';
+}
