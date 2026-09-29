@@ -1,13 +1,62 @@
 <?php
 declare(strict_types=1);
 
-$measurementRecords = [
+$measurementRecords = [];
+
+$databaseBootstrap = dirname(__DIR__, 2) . '/database/db.php';
+if (($currentPage ?? '') === 'historical' && is_file($databaseBootstrap)) {
+    try {
+        require_once $databaseBootstrap;
+        $deviceLocations = [];
+        foreach ($wells as $well) {
+            if (isset($well['deviceId'])) {
+                $deviceLocations[$well['deviceId']] = $well;
+            }
+        }
+
+        $readingStatement = idepDatabase()->query(
+            'SELECT sr.h1, sr.h2, sr.hasil, sr.received_at, s.id_device
+             FROM sensor_readings sr
+             JOIN sensors s ON s.id = sr.sensor_id
+             ORDER BY sr.received_at DESC, sr.id DESC
+             LIMIT 100'
+        );
+
+        foreach ($readingStatement->fetchAll() as $reading) {
+            $well = $deviceLocations[$reading['id_device']] ?? null;
+            $receivedAt = (string) ($reading['received_at'] ?? '');
+            $receivedDate = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $receivedAt)
+                ?: new DateTimeImmutable($receivedAt ?: 'now');
+            $h1 = (float) ($reading['h1'] ?? 0);
+            $h2 = (float) ($reading['h2'] ?? 0);
+            $hasil = ($h1 === 0.0 && $h2 === 0.0) ? 0.0 : (float) ($reading['hasil'] ?? 0);
+
+            $measurementRecords[] = [
+                'date' => $receivedDate->format('d M Y H:i'),
+                'dateIso' => $receivedDate->format('Y-m-d\TH:i:s'),
+                'wellId' => $well['id'] ?? (string) $reading['id_device'],
+                'village' => $well['city'] ?? 'Unassigned',
+                'wellType' => $well['wellType'] ?? '',
+                'waterLevel' => number_format($hasil, 2) . ' m',
+                'waterValue' => $hasil,
+                'quality' => ($h1 === 0.0 && $h2 === 0.0) ? 'No reading' : 'Good',
+                'export' => 'CSV',
+            ];
+        }
+    } catch (Throwable) {
+        $measurementRecords = [];
+    }
+}
+
+if ($measurementRecords === []) {
+    $measurementRecords = [
     ['date' => '14 Jul', 'wellId' => 'RW-01', 'village' => 'Ubud', 'waterLevel' => '2.31 m', 'quality' => 'Good', 'export' => 'CSV'],
     ['date' => '14 Jul', 'wellId' => 'RW-07', 'village' => 'Tabanan', 'waterLevel' => '1.82 m', 'quality' => 'Good', 'export' => 'Excel'],
     ['date' => '14 Jul', 'wellId' => 'RW-12', 'village' => 'Denpasar', 'waterLevel' => '3.05 m', 'quality' => 'Review', 'export' => 'CSV'],
     ['date' => '13 Jul', 'wellId' => 'RW-18', 'village' => 'Gianyar', 'waterLevel' => '2.10 m', 'quality' => 'Good', 'export' => 'Excel'],
     ['date' => '13 Jul', 'wellId' => 'RW-23', 'village' => 'Badung', 'waterLevel' => '1.67 m', 'quality' => 'Good', 'export' => 'CSV'],
-];
+    ];
+}
 
 $alerts = [
     [

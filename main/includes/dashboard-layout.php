@@ -14,17 +14,34 @@ if (!isset(
     exit('Dashboard role configuration is missing.');
 }
 
+if ($isAdmin) {
+    session_start();
+    if (($_SESSION['idep_admin'] ?? false) !== true) {
+        header('Location: /main/login.php');
+        exit;
+    }
+    if (!empty($_SESSION['idep_user_name'])) {
+        $userName = (string) $_SESSION['idep_user_name'];
+        $nameParts = preg_split('/\s+/', trim($userName)) ?: [];
+        $userInitials = strtoupper(implode('', array_map(static fn (string $part): string => $part[0] ?? '', array_slice($nameParts, 0, 2))));
+    }
+}
+
 require __DIR__ . '/well-data.php';
 require __DIR__ . '/operations-data.php';
 
 $rolePrefix = $isAdmin ? 'admin' : 'public';
 $pageDetails = [
+    'impacts' => [
+        'title' => 'Impacts',
+        'subtitle' => 'IoT groundwater overview for Bali Water Protection monitoring wells',
+    ],
     'dashboard' => [
         'title' => 'Dashboard',
         'subtitle' => 'IoT groundwater overview for Bali Water Protection monitoring wells',
     ],
     'wells' => [
-        'title' => 'Dashboard',
+        'title' => 'Monitoring Wells',
         'subtitle' => 'IoT groundwater overview for Bali Water Protection monitoring wells',
     ],
     'map' => [
@@ -64,6 +81,19 @@ $pageFile = __DIR__ . '/pages/' . $currentPage . '-page.php';
 $dashboardCssVersion = (string) filemtime(__DIR__ . '/../css/dashboard.css');
 $dashboardJsVersion = (string) filemtime(__DIR__ . '/../js/dashboard.js');
 $leafletMapJsVersion = (string) filemtime(__DIR__ . '/../js/leaflet-map.js');
+
+$navIcons = [
+    'home' => '<svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V21h13V10.5M9.5 21v-6h5v6"/></svg>',
+    'impacts' => '<svg viewBox="0 0 24 24"><path d="M5 20V11M12 20V4M19 20v-13"/></svg>',
+    'dashboard' => '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="1"/><path d="M3 9h18M9 9v11"/></svg>',
+    'wells' => '<svg viewBox="0 0 24 24"><path d="M12 3s-6 7-6 12a6 6 0 0 0 12 0c0-5-6-12-6-12Z"/><path d="M9.5 15.5a2.7 2.7 0 0 0 2.7 2.2"/></svg>',
+    'map' => '<svg viewBox="0 0 24 24"><path d="M20 10c0 5.5-8 11-8 11S4 15.5 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg>',
+    'historical' => '<svg viewBox="0 0 24 24"><path d="M3 20h18M5 17l4-5 4 3 6-8"/><path d="M15 7h4v4"/></svg>',
+    'alerts' => '<svg viewBox="0 0 24 24"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7ZM10 20h4"/></svg>',
+    'reports' => '<svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v5h4M9 12h6M9 16h6"/></svg>',
+    'registration' => '<svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M9 5V3h6v2M8 10h8"/></svg>',
+    'settings' => '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.6v-.2h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></svg>',
+];
 ?>
 <!doctype html>
 <html lang="en">
@@ -87,28 +117,32 @@ $leafletMapJsVersion = (string) filemtime(__DIR__ . '/../js/leaflet-map.js');
   <div class="dashboard-shell">
     <aside class="sidebar">
       <a class="sidebar-logo" href="/" aria-label="Bali Water Protection home">
-        <img src="/images/brand/bwp-logo-dark.png" alt="Bali Water Protection">
+        <img src="/images/brand/idep-bwp-logo-white.png" alt="IDEP Foundation and Bali Water Protection">
       </a>
 
-      <a class="back-home" href="/index.php#impact">← Home / Impact</a>
-
       <nav class="sidebar-nav" aria-label="Dashboard navigation">
+        <a href="/index.php">
+          <span class="nav-icon" aria-hidden="true"><?= $navIcons['home'] ?></span>Home
+        </a>
+        <a class="<?= $currentPage === 'impacts' ? 'active' : '' ?>" href="/main/<?= $rolePrefix ?>-impacts.php">
+          <span class="nav-icon" aria-hidden="true"><?= $navIcons['impacts'] ?></span>Impacts
+        </a>
         <a class="<?= $currentPage === 'dashboard' ? 'active' : '' ?>" href="/main/<?= $rolePrefix ?>-dashboard.php">
-          <span class="nav-icon" aria-hidden="true">⌂</span>Dashboard
+          <span class="nav-icon" aria-hidden="true"><?= $navIcons['dashboard'] ?></span>Project Overview
         </a>
         <a class="<?= $currentPage === 'wells' ? 'active' : '' ?>" href="/main/<?= $rolePrefix ?>-monitoring-wells.php">
-          <span class="nav-icon" aria-hidden="true">◉</span>Monitoring Wells
+          <span class="nav-icon" aria-hidden="true"><?= $navIcons['wells'] ?></span>Monitoring Wells
         </a>
         <a class="<?= $currentPage === 'map' ? 'active' : '' ?>" href="/main/<?= $rolePrefix ?>-map-view.php">
-          <span class="nav-icon" aria-hidden="true">⌖</span>Map View
+          <span class="nav-icon" aria-hidden="true"><?= $navIcons['map'] ?></span>Map View
         </a>
 
         <?php if ($isAdmin): ?>
-          <a class="<?= $currentPage === 'historical' ? 'active' : '' ?>" href="/main/admin-historical-data.php"><span class="nav-icon" aria-hidden="true">↗</span>Historical Data</a>
-          <a class="<?= $currentPage === 'alerts' ? 'active' : '' ?>" href="/main/admin-alerts.php"><span class="nav-icon" aria-hidden="true">♧</span>Alerts</a>
-          <a class="<?= $currentPage === 'reports' ? 'active' : '' ?>" href="/main/admin-reports.php"><span class="nav-icon" aria-hidden="true">▤</span>Reports</a>
-          <a class="<?= $currentPage === 'registration' ? 'active' : '' ?>" href="/main/admin-site-registration.php"><span class="nav-icon" aria-hidden="true">▣</span>Site Registration</a>
-          <a class="<?= $currentPage === 'settings' ? 'active' : '' ?>" href="/main/admin-settings.php"><span class="nav-icon" aria-hidden="true">⚙</span>Settings</a>
+          <a class="<?= $currentPage === 'historical' ? 'active' : '' ?>" href="/main/admin-historical-data.php"><span class="nav-icon" aria-hidden="true"><?= $navIcons['historical'] ?></span>Historical Data</a>
+          <a class="<?= $currentPage === 'alerts' ? 'active' : '' ?>" href="/main/admin-alerts.php"><span class="nav-icon" aria-hidden="true"><?= $navIcons['alerts'] ?></span>Alerts</a>
+          <a class="<?= $currentPage === 'reports' ? 'active' : '' ?>" href="/main/admin-reports.php"><span class="nav-icon" aria-hidden="true"><?= $navIcons['reports'] ?></span>Reports</a>
+          <a class="<?= $currentPage === 'registration' ? 'active' : '' ?>" href="/main/admin-site-registration.php"><span class="nav-icon" aria-hidden="true"><?= $navIcons['registration'] ?></span>Site Registration</a>
+          <a class="<?= $currentPage === 'settings' ? 'active' : '' ?>" href="/main/admin-settings.php"><span class="nav-icon" aria-hidden="true"><?= $navIcons['settings'] ?></span>Settings</a>
         <?php endif; ?>
       </nav>
 
@@ -120,7 +154,7 @@ $leafletMapJsVersion = (string) filemtime(__DIR__ . '/../js/leaflet-map.js');
       <?php endif; ?>
 
       <div class="sidebar-bottom">
-        <a class="session-link" href="/main/login.php">
+        <a class="session-link" href="<?= $isAdmin ? '/main/logout.php' : '/main/login.php' ?>">
           <span aria-hidden="true">⇥</span><?= $isAdmin ? 'Logout' : 'Login' ?>
         </a>
         <div class="support-card">

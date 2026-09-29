@@ -17,6 +17,16 @@ Open the website at:
 http://127.0.0.1:8000
 ```
 
+For local administrator testing, use:
+
+```text
+Username: admin123
+Password: admin123
+```
+
+The demonstration account only works on `localhost`. On a shared/public URL,
+administrator login uses active accounts from the SQLite `user` table.
+
 Press `Control + C` to stop the server.
 
 ## Share temporarily
@@ -28,3 +38,9 @@ cloudflared tunnel --url http://127.0.0.1:8000
 ```
 
 Share the generated `https://...trycloudflare.com` link. The link stops working when the PHP server or tunnel is closed.
+
+## Current data behaviour
+
+- Dashboard and Historical Data read sensor measurements from `database/idep_groundwater.db`.
+- Site Registration, generated reports, and settings persist in the current browser until their shared database tables are finalised.
+- Public users do not need an account; administrator pages require a server session.

@@ -1,7 +1,7 @@
 <section class="operations-filter" aria-label="Report filters">
-  <label><span>Report Period</span><select><option>Report Period</option><option>Last 7 Days</option><option>Last Month</option><option>Q2 2026</option></select></label>
-  <label><span>Village</span><select><option>Village</option><option>Ubud</option><option>Tabanan</option><option>Denpasar</option></select></label>
-  <label><span>Template</span><select><option>Template</option><option>Groundwater Summary</option><option>Sensor Status</option><option>Recharge Well Activity</option></select></label>
+  <label><span>Report Period</span><select data-report-filter="period"><option value="Current selection">Report Period</option><option>Last 7 Days</option><option>Last Month</option><option>Q2 2026</option></select></label>
+  <label><span>Village</span><select data-report-filter="village"><option value="All Bali">Village</option><option>Ubud</option><option>Tabanan</option><option>Denpasar</option></select></label>
+  <label><span>Template</span><select data-report-filter="template"><option value="">Template</option><option>Monthly Groundwater Summary</option><option>Sensor Status Report</option><option>Recharge Well Activity</option></select></label>
   <button class="operation-export" type="button" data-export-reports>CSV / Excel Export</button>
 </section>
 

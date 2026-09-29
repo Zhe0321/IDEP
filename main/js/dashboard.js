@@ -374,8 +374,18 @@ function applyOperationalSearch() {
     const villageFilter = document.querySelector('[data-history-filter="village"]');
     const village = villageFilter instanceof HTMLSelectElement ? villageFilter.value : "";
     const matchesVillage = !row.matches("[data-history-row]") || !village || row.dataset.village === village;
-    row.hidden = !(matchesSearch && matchesVillage);
+    const typeFilter = document.querySelector('[data-history-filter="type"]');
+    const wellType = typeFilter instanceof HTMLSelectElement ? typeFilter.value : "";
+    const matchesType = !row.matches("[data-history-row]") || !wellType || row.dataset.wellType === wellType;
+    const periodFilter = document.querySelector('[data-history-filter="period"]');
+    const period = periodFilter instanceof HTMLSelectElement ? Number(periodFilter.value) : 0;
+    const readingDate = row.dataset.readingDate ? new Date(row.dataset.readingDate) : null;
+    const cutoff = period > 0 ? Date.now() - period * 24 * 60 * 60 * 1000 : 0;
+    const matchesPeriod = !row.matches("[data-history-row]") || !period || !readingDate || readingDate.getTime() >= cutoff;
+    row.hidden = !(matchesSearch && matchesVillage && matchesType && matchesPeriod);
   });
+
+  drawHistoricalChart();
 }
 
 searchInput?.addEventListener("input", applyOperationalSearch);
@@ -402,9 +412,19 @@ function drawHistoricalChart() {
   const width = bounds.width;
   const height = bounds.height;
   const padding = { top: 20, right: 22, bottom: 20, left: 22 };
-  const values = [2.18, 2.55, 1.72, 1.43, 1.56, 2.38, 2.16, 2.64, 2.75, 2.32];
-  const minimum = 1.1;
-  const maximum = 3.1;
+  const visibleRows = Array.from(document.querySelectorAll("[data-history-row]"))
+    .filter((row) => !row.hidden)
+    .slice(0, 20)
+    .reverse();
+  const values = visibleRows
+    .map((row) => Number(row.dataset.waterValue))
+    .filter((value) => Number.isFinite(value));
+  const chartValues = values.length > 0 ? values : [0];
+  const dataMinimum = Math.min(...chartValues);
+  const dataMaximum = Math.max(...chartValues);
+  const range = Math.max(0.5, dataMaximum - dataMinimum);
+  const minimum = Math.max(0, dataMinimum - range * 0.18);
+  const maximum = dataMaximum + range * 0.18;
   const plotWidth = width - padding.left - padding.right;
   const plotHeight = height - padding.top - padding.bottom;
 
@@ -420,8 +440,10 @@ function drawHistoricalChart() {
     context.stroke();
   }
 
-  const points = values.map((value, index) => ({
-    x: padding.left + (plotWidth / (values.length - 1)) * index,
+  const points = chartValues.map((value, index) => ({
+    x: chartValues.length === 1
+      ? padding.left + plotWidth / 2
+      : padding.left + (plotWidth / (chartValues.length - 1)) * index,
     y: padding.top + ((maximum - value) / (maximum - minimum)) * plotHeight,
   }));
 
@@ -446,8 +468,8 @@ function drawHistoricalChart() {
 drawHistoricalChart();
 window.addEventListener("resize", drawHistoricalChart);
 
-function downloadTextFile(filename, content) {
-  const blob = new Blob([content], { type: "text/csv;charset=utf-8" });
+function downloadTextFile(filename, content, mimeType = "text/csv;charset=utf-8") {
+  const blob = new Blob([content], { type: mimeType });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
@@ -456,6 +478,49 @@ function downloadTextFile(filename, content) {
   link.click();
   link.remove();
   URL.revokeObjectURL(url);
+}
+
+function csvEscape(value) {
+  return `"${String(value ?? "").replace(/"/g, '""')}"`;
+}
+
+function htmlEscape(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function rowValues(row) {
+  return Array.from(row?.querySelectorAll("td") ?? []).map((cell) => cell.textContent.trim());
+}
+
+function exportRecord(button) {
+  const row = button.closest("tr");
+  const values = rowValues(row).slice(0, -1);
+  const format = (button.dataset.recordExport ?? "CSV").toLowerCase();
+  const safeName = values[0]?.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "record";
+
+  if (format === "pdf") {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+      return;
+    }
+    printWindow.opener = null;
+    printWindow.document.write(`<!doctype html><html><head><title>${htmlEscape(values[0] ?? "IDEP Report")}</title><style>body{font-family:Arial,sans-serif;padding:36px;color:#141a21}h1{font-size:24px}dl{display:grid;grid-template-columns:180px 1fr;gap:10px}dt{font-weight:700}dd{margin:0}</style></head><body><h1>${htmlEscape(values[0] ?? "IDEP Report")}</h1><dl>${values.map((value, index) => `<dt>Field ${index + 1}</dt><dd>${htmlEscape(value)}</dd>`).join("")}</dl><script>window.print()<\/script></body></html>`);
+    printWindow.document.close();
+    return;
+  }
+
+  if (format === "excel") {
+    const tableCells = values.map((value) => `<td>${value}</td>`).join("");
+    downloadTextFile(`${safeName}.xls`, `<table><tr>${tableCells}</tr></table>`, "application/vnd.ms-excel;charset=utf-8");
+    return;
+  }
+
+  downloadTextFile(`${safeName}.csv`, values.map(csvEscape).join(","));
 }
 
 document.querySelector("[data-export-measurements]")?.addEventListener("click", () => {
@@ -468,11 +533,11 @@ document.querySelector("[data-export-measurements]")?.addEventListener("click", 
   downloadTextFile("idep-historical-measurements.csv", csvRows.join("\n"));
 });
 
-document.querySelectorAll("[data-record-export]").forEach((button) => {
-  button.addEventListener("click", () => {
-    const rowText = button.closest("tr")?.innerText.replaceAll("\t", ",") ?? "IDEP export";
-    downloadTextFile(`idep-${button.dataset.recordExport?.toLowerCase() ?? "export"}.csv`, rowText);
-  });
+document.addEventListener("click", (event) => {
+  const button = event.target instanceof Element ? event.target.closest("[data-record-export]") : null;
+  if (button instanceof HTMLButtonElement) {
+    exportRecord(button);
+  }
 });
 
 const alertRows = Array.from(document.querySelectorAll(".alert-row[data-alert]"));
@@ -499,6 +564,69 @@ alertRows.forEach((row) => {
 
 const reportTable = document.querySelector("[data-report-table]");
 const reportMessage = document.querySelector("[data-report-message]");
+const reportStorageKey = "idep-generated-reports";
+
+function reportFilterValue(name, fallback) {
+  const field = document.querySelector(`[data-report-filter="${name}"]`);
+  return field instanceof HTMLSelectElement ? field.value || fallback : fallback;
+}
+
+function addGeneratedReportRow(report, prepend = true) {
+  if (!(reportTable instanceof HTMLTableSectionElement)) {
+    return null;
+  }
+
+  const row = prepend ? reportTable.insertRow(0) : reportTable.insertRow();
+  row.dataset.generatedReport = "true";
+  [report.name, report.period, report.createdBy, report.date, report.status].forEach((value) => {
+    row.insertCell().textContent = value;
+  });
+  const exportCell = row.insertCell();
+  const exportButton = document.createElement("button");
+  exportButton.type = "button";
+  exportButton.className = "export-pill";
+  exportButton.dataset.recordExport = report.export;
+  exportButton.textContent = report.export;
+  exportCell.appendChild(exportButton);
+  return row;
+}
+
+function savedGeneratedReports() {
+  if (!(reportTable instanceof HTMLTableSectionElement)) {
+    return [];
+  }
+  return Array.from(reportTable.querySelectorAll("tr[data-generated-report]"))
+    .map((row) => {
+      const cells = rowValues(row);
+      return {
+        name: cells[0],
+        period: cells[1],
+        createdBy: cells[2],
+        date: cells[3],
+        status: cells[4],
+        export: row.querySelector("[data-record-export]")?.dataset.recordExport ?? "PDF",
+      };
+    });
+}
+
+function persistGeneratedReports() {
+  try {
+    localStorage.setItem(reportStorageKey, JSON.stringify(savedGeneratedReports()));
+  } catch {
+    // The report remains available for the current page if storage is unavailable.
+  }
+}
+
+if (reportTable instanceof HTMLTableSectionElement) {
+  try {
+    const savedReports = JSON.parse(localStorage.getItem(reportStorageKey) ?? "[]");
+    if (Array.isArray(savedReports)) {
+      savedReports.slice().reverse().forEach((report) => addGeneratedReportRow(report, true));
+    }
+  } catch {
+    // Ignore malformed browser storage and keep the server-provided rows.
+  }
+}
 
 document.querySelectorAll("[data-generate-report]").forEach((button) => {
   button.addEventListener("click", () => {
@@ -506,21 +634,22 @@ document.querySelectorAll("[data-generate-report]").forEach((button) => {
       return;
     }
 
-    const name = button.dataset.generateReport ?? "New Report";
-    const row = reportTable.insertRow(0);
-    [name, "Current selection", "Research Admin", "Today", "Ready"].forEach((value) => {
-      row.insertCell().textContent = value;
+    const template = button.dataset.generateReport ?? reportFilterValue("template", "New Report");
+    const village = reportFilterValue("village", "All Bali");
+    const period = reportFilterValue("period", "Current selection");
+    const name = village === "All Bali" ? template : `${village} · ${template}`;
+    addGeneratedReportRow({
+      name,
+      period,
+      createdBy: "Field Team",
+      date: new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", timeZone: "Asia/Makassar" }).format(new Date()),
+      status: "Ready",
+      export: "PDF",
     });
-    const exportCell = row.insertCell();
-    const exportButton = document.createElement("button");
-    exportButton.type = "button";
-    exportButton.className = "export-pill";
-    exportButton.textContent = "PDF";
-    exportButton.addEventListener("click", () => downloadTextFile("idep-report.csv", row.innerText.replaceAll("\t", ",")));
-    exportCell.appendChild(exportButton);
+    persistGeneratedReports();
 
     if (reportMessage) {
-      reportMessage.textContent = `${name} has been generated as a prototype report.`;
+      reportMessage.textContent = `${name} has been generated and saved in this browser.`;
       reportMessage.hidden = false;
     }
   });
@@ -528,12 +657,31 @@ document.querySelectorAll("[data-generate-report]").forEach((button) => {
 
 document.querySelector("[data-export-reports]")?.addEventListener("click", () => {
   const rows = Array.from(document.querySelectorAll("[data-report-table] tr"));
-  const content = ["Report Name,Period,Created By,Created Date,Status,Export", ...rows.map((row) => row.innerText.replaceAll("\t", ","))];
+  const content = [
+    "Report Name,Period,Created By,Created Date,Status,Export",
+    ...rows.map((row) => rowValues(row).map(csvEscape).join(",")),
+  ];
   downloadTextFile("idep-generated-reports.csv", content.join("\n"));
 });
 
 const settingsButtons = Array.from(document.querySelectorAll("[data-settings-section]"));
 const settingsHeading = document.querySelector("[data-settings-heading]");
+const settingsForm = document.querySelector("[data-settings-form]");
+const settingsStorageKey = "idep-dashboard-settings";
+
+if (settingsForm instanceof HTMLFormElement) {
+  try {
+    const savedSettings = JSON.parse(localStorage.getItem(settingsStorageKey) ?? "{}");
+    Object.entries(savedSettings).forEach(([name, value]) => {
+      const field = settingsForm.elements.namedItem(name);
+      if (field instanceof HTMLInputElement || field instanceof HTMLSelectElement) {
+        field.value = String(value);
+      }
+    });
+  } catch {
+    // Keep the server defaults when browser storage is unavailable or malformed.
+  }
+}
 
 settingsButtons.forEach((button) => {
   button.addEventListener("click", () => {
@@ -545,8 +693,16 @@ settingsButtons.forEach((button) => {
   });
 });
 
-document.querySelector("[data-settings-form]")?.addEventListener("submit", (event) => {
+settingsForm?.addEventListener("submit", (event) => {
   event.preventDefault();
+  if (settingsForm instanceof HTMLFormElement) {
+    const values = Object.fromEntries(new FormData(settingsForm).entries());
+    try {
+      localStorage.setItem(settingsStorageKey, JSON.stringify(values));
+    } catch {
+      // The visible values remain usable for the current session.
+    }
+  }
   const message = document.querySelector("[data-settings-message]");
   if (message) {
     message.hidden = false;
@@ -559,6 +715,7 @@ const closeHardwareButton = document.querySelector("[data-close-hardware-form]")
 const hardwareTable = document.querySelector("[data-hardware-table]");
 const hardwareSubmitButton = document.querySelector("[data-hardware-submit]");
 const hardwareMessage = document.querySelector("[data-hardware-message]");
+const hardwareStorageKey = "idep-hardware-sites";
 let editingHardwareRow = null;
 
 function setHardwareFormOpen(open) {
@@ -597,10 +754,12 @@ closeHardwareButton?.addEventListener("click", () => {
 });
 
 function updateHardwareCount() {
-  const count = hardwareTable?.querySelectorAll("tr").length ?? 0;
+  const rows = Array.from(hardwareTable?.querySelectorAll("tr") ?? []);
+  const count = rows.length;
+  const visibleCount = rows.filter((row) => !row.hidden).length;
   const counter = document.querySelector("[data-hardware-count]");
   if (counter) {
-    counter.textContent = count === 0 ? "No entries" : `Showing 1 to ${count} of ${count} entries`;
+    counter.textContent = count === 0 ? "No entries" : `Showing ${visibleCount} of ${count} entries`;
   }
 }
 
@@ -681,87 +840,132 @@ function updateHardwareRow(row, values) {
   actionCell.append(editButton, removeButton);
 }
 
-// hardwareForm?.addEventListener("submit", (event) => {
-//   event.preventDefault();
-//   if (!(hardwareForm instanceof HTMLFormElement) || !(hardwareTable instanceof HTMLTableSectionElement)) {
-//     return;
-//   }
+function hardwareRowData(row) {
+  return {
+    name: row.dataset.name ?? "",
+    city: row.dataset.city ?? "",
+    mac: row.dataset.mac ?? "",
+    date: row.dataset.date ?? "",
+    installer: row.dataset.installer ?? "",
+    type: row.dataset.type ?? "",
+    longitude: row.dataset.longitude ?? "",
+    latitude: row.dataset.latitude ?? "",
+  };
+}
 
-//   const formData = new FormData(hardwareForm);
-//   const values = {
-//     name: String(formData.get("name") ?? ""),
-//     installer: String(formData.get("installer") ?? ""),
-//     type: String(formData.get("type") ?? ""),
-//     date: String(formData.get("date") ?? ""),
-//     longitude: String(formData.get("longitude") ?? ""),
-//     city: String(formData.get("city") ?? ""),
-//     latitude: String(formData.get("latitude") ?? ""),
-//     mac: String(formData.get("mac") ?? ""),
-//   };
+function persistHardwareRows() {
+  if (!(hardwareTable instanceof HTMLTableSectionElement)) {
+    return;
+  }
+  try {
+    const rows = Array.from(hardwareTable.querySelectorAll("tr")).map(hardwareRowData);
+    localStorage.setItem(hardwareStorageKey, JSON.stringify(rows));
+  } catch {
+    // Keep the current-page edits if browser storage is unavailable.
+  }
+}
 
-//   const wasEditing = editingHardwareRow instanceof HTMLTableRowElement;
-//   const row = wasEditing ? editingHardwareRow : hardwareTable.insertRow();
-//   updateHardwareRow(row, values);
+function refreshHardwareNameOptions() {
+  const select = document.querySelector('[data-hardware-filter="name"]');
+  if (!(select instanceof HTMLSelectElement) || !(hardwareTable instanceof HTMLTableSectionElement)) {
+    return;
+  }
+  const selected = select.value;
+  select.replaceChildren(new Option("All Wells in City", ""));
+  Array.from(hardwareTable.querySelectorAll("tr")).forEach((row) => {
+    select.add(new Option(`${row.dataset.name} · ${row.dataset.city}`, row.dataset.name));
+  });
+  if (Array.from(select.options).some((option) => option.value === selected)) {
+    select.value = selected;
+  }
+}
 
-//   hardwareForm.reset();
-//   editingHardwareRow = null;
-//   if (hardwareSubmitButton) {
-//     hardwareSubmitButton.textContent = "Add device";
-//   }
-//   if (hardwareMessage) {
-//     hardwareMessage.textContent = wasEditing
-//       ? "Device updated temporarily. Database connection will be added later."
-//       : "Device added temporarily. Database connection will be added later.";
-//     hardwareMessage.hidden = false;
-//   }
-//   updateHardwareCount();
-// });
+function applyHardwareFilters() {
+  if (!(hardwareTable instanceof HTMLTableSectionElement)) {
+    return;
+  }
+  const valueFor = (name) => {
+    const field = document.querySelector(`[data-hardware-filter="${name}"]`);
+    return field instanceof HTMLInputElement || field instanceof HTMLSelectElement ? field.value : "";
+  };
+  const city = valueFor("city");
+  const name = valueFor("name");
+  const startDate = valueFor("start-date");
+  const endDate = valueFor("end-date");
+  const query = searchInput?.value.trim().toLowerCase() ?? "";
 
-hardwareForm?.addEventListener("submit", async (event) => {
+  Array.from(hardwareTable.querySelectorAll("tr")).forEach((row) => {
+    const searchable = `${row.dataset.name} ${row.dataset.city} ${row.dataset.mac} ${row.dataset.installer}`.toLowerCase();
+    const matches = (!city || row.dataset.city === city)
+      && (!name || row.dataset.name === name)
+      && (!startDate || !row.dataset.date || row.dataset.date >= startDate)
+      && (!endDate || !row.dataset.date || row.dataset.date <= endDate)
+      && (!query || searchable.includes(query));
+    row.hidden = !matches;
+  });
+  updateHardwareCount();
+}
+
+if (hardwareTable instanceof HTMLTableSectionElement) {
+  try {
+    const storedRows = localStorage.getItem(hardwareStorageKey);
+    if (storedRows !== null) {
+      const records = JSON.parse(storedRows);
+      if (Array.isArray(records)) {
+        hardwareTable.textContent = "";
+        records.forEach((record) => updateHardwareRow(hardwareTable.insertRow(), record));
+      }
+    }
+  } catch {
+    // Keep the server-provided hardware records.
+  }
+  refreshHardwareNameOptions();
+  applyHardwareFilters();
+}
+
+document.querySelectorAll("[data-hardware-filter]").forEach((field) => {
+  field.addEventListener("change", applyHardwareFilters);
+});
+searchInput?.addEventListener("input", applyHardwareFilters);
+
+hardwareForm?.addEventListener("submit", (event) => {
   event.preventDefault();
-  if (!(hardwareForm instanceof HTMLFormElement)) {
+  if (!(hardwareForm instanceof HTMLFormElement) || !(hardwareTable instanceof HTMLTableSectionElement)) {
     return;
   }
 
   const formData = new FormData(hardwareForm);
+  const values = {
+    name: String(formData.get("name") ?? ""),
+    installer: String(formData.get("installer") ?? ""),
+    type: String(formData.get("type") ?? ""),
+    date: String(formData.get("date") ?? ""),
+    longitude: String(formData.get("longitude") ?? ""),
+    city: String(formData.get("city") ?? ""),
+    latitude: String(formData.get("latitude") ?? ""),
+    mac: String(formData.get("mac") ?? ""),
+  };
 
+  const wasEditing = editingHardwareRow instanceof HTMLTableRowElement;
+  const row = wasEditing ? editingHardwareRow : hardwareTable.insertRow();
+  updateHardwareRow(row, values);
+
+  hardwareForm.reset();
+  editingHardwareRow = null;
   if (hardwareSubmitButton) {
     hardwareSubmitButton.disabled = true;
     hardwareSubmitButton.textContent = "Saving...";
   }
   if (hardwareMessage) {
-    hardwareMessage.hidden = true;
+    hardwareMessage.textContent = wasEditing
+      ? "Device updated and saved in this browser."
+      : "Device added and saved in this browser.";
+    hardwareMessage.hidden = false;
   }
-
-  try {
-    const response = await fetch("/main/admin-site-registration-save.php", {
-      method: "POST",
-      body: formData,
-    });
-    const result = await response.json();
-
-    if (!response.ok || !result.success) {
-      throw new Error(result.message ?? "Failed to save device.");
-    }
-
-    if (hardwareMessage) {
-      hardwareMessage.textContent = "Device saved successfully. Reloading...";
-      hardwareMessage.hidden = false;
-    }
-
-    // Reload so the Hardware List reflects the real database state
-    window.setTimeout(() => window.location.reload(), 600);
-
-  } catch (error) {
-    if (hardwareSubmitButton) {
-      hardwareSubmitButton.disabled = false;
-      hardwareSubmitButton.textContent = editingHardwareRow ? "Update device" : "Add device";
-    }
-    if (hardwareMessage) {
-      hardwareMessage.textContent = error.message ?? "Something went wrong.";
-      hardwareMessage.hidden = false;
-    }
-  }
+  persistHardwareRows();
+  refreshHardwareNameOptions();
+  applyHardwareFilters();
+  updateHardwareCount();
 });
 
 hardwareTable?.addEventListener("click", (event) => {
@@ -781,6 +985,9 @@ hardwareTable?.addEventListener("click", (event) => {
       resetHardwareEditor();
     }
     row?.remove();
+    persistHardwareRows();
+    refreshHardwareNameOptions();
+    applyHardwareFilters();
     updateHardwareCount();
   }
 });
