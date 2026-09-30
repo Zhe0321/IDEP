@@ -39,7 +39,7 @@ $loginJsVersion = (string) filemtime(__DIR__ . '/js/login.js');
         </p>
 
         <ul class="feature-list">
-          <li>Role-based access for public and manager users</li>
+          <li>Role-based access for public, manager and administrator users</li>
           <li>Current well status and sensor transmissions</li>
           <li>Operational controls protected by authentication</li>
         </ul>
@@ -78,7 +78,7 @@ $loginJsVersion = (string) filemtime(__DIR__ . '/js/login.js');
             >
           </div>
 
-          <button class="primary-action" type="submit">Sign in as Manager</button>
+          <button class="primary-action" type="submit">Sign in securely</button>
           <p class="form-message" id="form-message" aria-live="polite"></p>
         </form>
 
@@ -88,7 +88,7 @@ $loginJsVersion = (string) filemtime(__DIR__ . '/js/login.js');
 
         <aside class="permission-note">
           <strong>Permission check</strong>
-          <p>Public users see three monitoring pages. Managers receive the full operational workspace.</p>
+          <p>Managers receive the operational workspace. Administrators can also manage user accounts.</p>
         </aside>
 
         <a class="back-link" href="/main/public-impacts.php">Back to Impact</a>

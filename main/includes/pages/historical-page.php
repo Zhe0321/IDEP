@@ -50,7 +50,14 @@ sort($cities);
       </thead>
       <tbody>
         <?php foreach ($measurementRecords as $record): ?>
-          <tr data-history-row data-village="<?= strtolower(htmlspecialchars($record['village'])) ?>" data-search="<?= strtolower(htmlspecialchars(implode(' ', $record))) ?>">
+          <tr
+            data-history-row
+            data-village="<?= strtolower(htmlspecialchars($record['village'])) ?>"
+            data-well-type="<?= strtolower(htmlspecialchars((string) ($record['wellType'] ?? ''))) ?>"
+            data-reading-date="<?= htmlspecialchars((string) ($record['dateIso'] ?? '')) ?>"
+            data-water-value="<?= htmlspecialchars((string) ($record['waterValue'] ?? preg_replace('/[^0-9.\-]/', '', $record['waterLevel']))) ?>"
+            data-search="<?= strtolower(htmlspecialchars(implode(' ', $record))) ?>"
+          >
             <td><?= htmlspecialchars($record['date']) ?></td>
             <td><?= htmlspecialchars($record['wellId']) ?></td>
             <td><?= htmlspecialchars($record['village']) ?></td>
