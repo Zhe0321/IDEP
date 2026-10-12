@@ -30,7 +30,7 @@ function renderProgrammeMetrics(metrics) {
     "well-count": metrics.wellCount,
     "village-count": metrics.villageCount,
     "district-count": metrics.districtCount,
-    "annual-litres": metrics.annualLitresLabel,
+    "actual-litres": metrics.actualLitresLabel,
     "people-supported": metrics.peopleSupportedLabel,
     "families-supported": metrics.familiesSupportedLabel,
   };
@@ -42,8 +42,9 @@ function renderProgrammeMetrics(metrics) {
   });
 
   const districts = Array.isArray(metrics.topDistricts) ? metrics.topDistricts : [];
+  const sensors = Array.isArray(metrics.topSensors) ? metrics.topSensors : [];
   renderProgrammeRows("[data-programme-top-wells]", districts, "wellCount");
-  renderProgrammeRows("[data-programme-top-litres]", districts, "annualLitresLabel", " Restored");
+  renderProgrammeRows("[data-programme-top-litres]", sensors, "litresLabel");
 }
 
 async function refreshProgrammeMetrics() {

@@ -11,10 +11,11 @@ try {
         'wellCount' => 0,
         'villageCount' => 0,
         'districtCount' => 0,
-        'annualLitresLabel' => '—',
+        'actualLitresLabel' => '—',
         'peopleSupportedLabel' => '—',
         'familiesSupportedLabel' => '—',
         'topDistricts' => [],
+        'topSensors' => [],
     ];
 }
 
@@ -101,11 +102,11 @@ $homepageJsVersion = (string) filemtime(__DIR__ . '/js/homepage.js');
 
           <article class="impact-card reveal">
             <span class="card-label">Total Litres Absorbed</span>
-            <p class="feature-metric"><strong data-programme-metric="annual-litres"><?= htmlspecialchars((string)$programmeMetrics['annualLitresLabel']) ?></strong> <span>Restored Annually</span></p>
-            <p class="card-note">Estimated groundwater recharge</p>
+            <p class="feature-metric"><strong data-programme-metric="actual-litres"><?= htmlspecialchars((string)$programmeMetrics['actualLitresLabel']) ?></strong> <span>Received by Sensors</span></p>
+            <p class="card-note">Cumulative valid sensor readings</p>
             <div class="card-lines card-lines--rows" data-programme-top-litres>
-              <?php foreach ($programmeMetrics['topDistricts'] as $district): ?>
-                <p><span><?= htmlspecialchars((string)$district['name']) ?></span><span><?= htmlspecialchars((string)$district['annualLitresLabel']) ?> Restored</span></p>
+              <?php foreach ($programmeMetrics['topSensors'] as $sensor): ?>
+                <p><span><?= htmlspecialchars((string)$sensor['name']) ?></span><span><?= htmlspecialchars((string)$sensor['litresLabel']) ?></span></p>
               <?php endforeach; ?>
             </div>
           </article>

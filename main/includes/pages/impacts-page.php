@@ -33,11 +33,11 @@ declare(strict_types=1);
 
     <article class="impact-value-card">
       <span class="impact-value-card__label">Total Litres Absorbed</span>
-      <p class="impact-value-card__metric"><strong data-programme-metric="annual-litres"><?= htmlspecialchars((string)$programmeMetrics['annualLitresLabel']) ?></strong> Restored Annually</p>
-      <p class="impact-value-card__note">Estimated groundwater recharge</p>
+      <p class="impact-value-card__metric"><strong data-programme-metric="actual-litres"><?= htmlspecialchars((string)$programmeMetrics['actualLitresLabel']) ?></strong> Received by Sensors</p>
+      <p class="impact-value-card__note">Cumulative valid sensor readings</p>
       <div class="impact-value-card__rows" data-programme-top-litres>
-        <?php foreach ($programmeMetrics['topDistricts'] as $district): ?>
-          <p><span><?= htmlspecialchars((string)$district['name']) ?></span><span><?= htmlspecialchars((string)$district['annualLitresLabel']) ?> Restored</span></p>
+        <?php foreach ($programmeMetrics['topSensors'] as $sensor): ?>
+          <p><span><?= htmlspecialchars((string)$sensor['name']) ?></span><span><?= htmlspecialchars((string)$sensor['litresLabel']) ?></span></p>
         <?php endforeach; ?>
       </div>
     </article>

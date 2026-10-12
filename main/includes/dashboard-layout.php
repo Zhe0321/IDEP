@@ -67,10 +67,11 @@ try {
         'wellCount' => count($wells),
         'villageCount' => count(array_unique(array_column($wells, 'city'))),
         'districtCount' => 0,
-        'annualLitresLabel' => '—',
+        'actualLitresLabel' => '—',
         'peopleSupportedLabel' => '—',
         'familiesSupportedLabel' => '—',
         'topDistricts' => [],
+        'topSensors' => [],
     ];
 }
 

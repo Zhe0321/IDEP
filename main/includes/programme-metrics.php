@@ -4,7 +4,6 @@ declare(strict_types=1);
 require_once dirname(__DIR__, 2) . '/database/db.php';
 
 const IDEP_REFERENCE_WELL_COUNT = 76;
-const IDEP_REFERENCE_ANNUAL_LITRES = 9_100_000_000;
 const IDEP_REFERENCE_PEOPLE_SUPPORTED = 498_000;
 
 function idepCompactNumber(float $value, int $decimals = 1): string
@@ -34,9 +33,9 @@ function idepDistrictDisplayName(string $name): string
 /**
  * Returns the public programme figures shown on Home, Impacts and Project Overview.
  *
- * The original approved impact estimate is 9.1B litres and 498K people for 76 wells.
- * Until every historical well has a measured capacity, estimates are scaled from that
- * baseline using the current active well count in the database.
+ * Well and location totals come from active database records. Absorbed litres are the
+ * sum of actual sensor `hasil` readings; readings where both h1 and h2 are zero count
+ * as zero. The people estimate retains the approved 498K-for-76-wells baseline.
  *
  * @return array<string, mixed>
  */
@@ -56,11 +55,21 @@ function idepProgrammeMetrics(?PDO $pdo = null): array
     )->fetch() ?: [];
 
     $wellCount = (int)($summary['well_count'] ?? 0);
-    $annualLitres = $wellCount * (IDEP_REFERENCE_ANNUAL_LITRES / IDEP_REFERENCE_WELL_COUNT);
     $peopleSupported = (int)round(
         $wellCount * (IDEP_REFERENCE_PEOPLE_SUPPORTED / IDEP_REFERENCE_WELL_COUNT)
     );
     $familiesSupported = (int)round($peopleSupported / 4);
+
+    $actualLitres = (float)$pdo->query(
+        'SELECT COALESCE(SUM(
+            CASE
+                WHEN COALESCE(h1, 0) = 0 AND COALESCE(h2, 0) = 0 THEN 0
+                WHEN COALESCE(hasil, 0) > 0 THEN hasil
+                ELSE 0
+            END
+        ), 0)
+        FROM sensor_readings'
+    )->fetchColumn();
 
     $districtStatement = $pdo->query(
         'SELECT dc.name, COUNT(*) AS well_count
@@ -77,13 +86,38 @@ function idepProgrammeMetrics(?PDO $pdo = null): array
     $topDistricts = [];
     foreach ($districtStatement->fetchAll() as $district) {
         $districtWellCount = (int)$district['well_count'];
-        $districtAnnualLitres = $districtWellCount
-            * (IDEP_REFERENCE_ANNUAL_LITRES / IDEP_REFERENCE_WELL_COUNT);
         $topDistricts[] = [
             'name' => idepDistrictDisplayName((string)$district['name']),
             'wellCount' => $districtWellCount,
-            'annualLitres' => (int)round($districtAnnualLitres),
-            'annualLitresLabel' => idepCompactNumber($districtAnnualLitres) . ' L',
+        ];
+    }
+
+    $sensorStatement = $pdo->query(
+        'SELECT
+            s.id_device,
+            SUM(
+                CASE
+                    WHEN COALESCE(sr.h1, 0) = 0 AND COALESCE(sr.h2, 0) = 0 THEN 0
+                    WHEN COALESCE(sr.hasil, 0) > 0 THEN sr.hasil
+                    ELSE 0
+                END
+            ) AS actual_litres,
+            MAX(sr.received_at) AS last_received_at
+         FROM sensor_readings sr
+         JOIN sensors s ON s.id = sr.sensor_id
+         GROUP BY s.id, s.id_device
+         ORDER BY actual_litres DESC
+         LIMIT 3'
+    );
+
+    $topSensors = [];
+    foreach ($sensorStatement->fetchAll() as $sensor) {
+        $sensorLitres = max(0, (float)$sensor['actual_litres']);
+        $topSensors[] = [
+            'name' => (string)$sensor['id_device'],
+            'litres' => round($sensorLitres, 2),
+            'litresLabel' => number_format($sensorLitres, 2, '.', ',') . ' L',
+            'lastReceivedAt' => (string)($sensor['last_received_at'] ?? ''),
         ];
     }
 
@@ -91,14 +125,15 @@ function idepProgrammeMetrics(?PDO $pdo = null): array
         'wellCount' => $wellCount,
         'villageCount' => (int)($summary['village_count'] ?? 0),
         'districtCount' => (int)($summary['district_count'] ?? 0),
-        'annualLitres' => (int)round($annualLitres),
-        'annualLitresLabel' => idepCompactNumber($annualLitres) . ' L',
+        'actualLitres' => round($actualLitres, 2),
+        'actualLitresLabel' => number_format($actualLitres, 2, '.', ',') . ' L',
         'peopleSupported' => $peopleSupported,
         'peopleSupportedLabel' => '~' . idepCompactNumber($peopleSupported, 0),
         'familiesSupported' => $familiesSupported,
         'familiesSupportedLabel' => idepCompactNumber($familiesSupported, 0),
         'topDistricts' => $topDistricts,
-        'calculation' => 'Scaled from the approved 76-well impact estimate.',
+        'topSensors' => $topSensors,
+        'calculation' => 'Actual sum of valid sensor hasil readings.',
         'updatedAt' => (new DateTimeImmutable('now', new DateTimeZone('Asia/Makassar')))
             ->format(DateTimeInterface::ATOM),
     ];
