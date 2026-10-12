@@ -108,7 +108,7 @@ $noSignalWells = count(array_filter($wells, static fn (array $well): bool => $we
             <td><?= htmlspecialchars($well['startDate']) ?></td>
             <td><?= htmlspecialchars($well['endDate']) ?></td>
             <td><?= htmlspecialchars($well['duration']) ?></td>
-            <td><?= htmlspecialchars($well['absorption']) ?></td>
+            <td data-well-absorption title="<?= htmlspecialchars((string)($well['totalAbsorptionLabel'] ?? '—')) ?>"><?= htmlspecialchars((string)($well['totalAbsorptionLabel'] ?? '—')) ?></td>
             <td>
               <span class="signal signal--<?= htmlspecialchars($well['status']) ?>" aria-label="<?= htmlspecialchars($well['transmission']) ?> transmission">
                 <i></i><i></i><i></i><i></i>

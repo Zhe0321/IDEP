@@ -2066,7 +2066,9 @@ try {
             latest.hasil AS latest_hasil,
             latest.received_at AS latest_received_at,
             reading_span.first_received_at,
-            reading_span.last_received_at
+            reading_span.last_received_at,
+            reading_span.reading_count,
+            reading_span.total_absorption
         FROM wells w
         LEFT JOIN village v ON v.id = w.village_id
         LEFT JOIN sub_district sd ON sd.id = v.sub_district_id
@@ -2083,7 +2085,15 @@ try {
             SELECT
                 sensor_id,
                 MIN(received_at) AS first_received_at,
-                MAX(received_at) AS last_received_at
+                MAX(received_at) AS last_received_at,
+                COUNT(*) AS reading_count,
+                SUM(
+                    CASE
+                        WHEN COALESCE(h1, 0) = 0 AND COALESCE(h2, 0) = 0 THEN 0
+                        WHEN COALESCE(hasil, 0) > 0 THEN hasil
+                        ELSE 0
+                    END
+                ) AS total_absorption
             FROM sensor_readings
             GROUP BY sensor_id
         ) reading_span ON reading_span.sensor_id = s.id
@@ -2099,6 +2109,11 @@ foreach ($dbWells as $row) {
     $lastReadingAt = $row['last_received_at'] ?: null;
     $firstReadingDateIso = $firstReadingAt !== null ? substr((string)$firstReadingAt, 0, 10) : null;
     $lastReadingDateIso = $lastReadingAt !== null ? substr((string)$lastReadingAt, 0, 10) : null;
+    $readingCount = (int)($row['reading_count'] ?? 0);
+    $totalAbsorption = max(0, (float)($row['total_absorption'] ?? 0));
+    $totalAbsorptionLabel = $readingCount > 0
+        ? number_format($totalAbsorption, 2, '.', ',') . ' L'
+        : '—';
     $installDateIso = $row['installation_date'] ?: $firstReadingDateIso;
     $installDateDisplay = $installDateIso
         ? date('d F Y', strtotime($installDateIso))
@@ -2149,6 +2164,8 @@ foreach ($dbWells as $row) {
         'startDateISO' => $installDateIso,
         'readingStartISO' => $firstReadingDateIso,
         'readingEndISO' => $lastReadingDateIso,
+        'totalAbsorptionValue' => round($totalAbsorption, 2),
+        'totalAbsorptionLabel' => $totalAbsorptionLabel,
         'endDate' => '—',
         'endDateISO' => null,
         'duration' => 'Ongoing',
