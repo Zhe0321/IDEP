@@ -228,6 +228,46 @@ function updateWellsStats(visibleWells) {
   });
 }
 
+let absorptionRequestId = 0;
+
+async function refreshWellAbsorption() {
+  if (wellRows.length === 0) {
+    return;
+  }
+
+  const requestId = ++absorptionRequestId;
+  const parameters = new URLSearchParams();
+  const startDate = activeFilter("start-date");
+  const endDate = activeFilter("end-date");
+  if (startDate) parameters.set("start", startDate);
+  if (endDate) parameters.set("end", endDate);
+
+  try {
+    const response = await fetch(`/main/api/well-absorption.php?${parameters.toString()}`, {
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    });
+    const payload = await response.json();
+    if (!response.ok || !payload.success || !payload.data) {
+      throw new Error(payload.message ?? "Water absorption unavailable");
+    }
+    if (requestId !== absorptionRequestId) {
+      return;
+    }
+
+    wellRows.forEach((row) => {
+      const well = readWell(row);
+      const result = payload.data[well.id];
+      const cell = row.querySelector("[data-well-absorption]");
+      if (!cell) return;
+      cell.textContent = result?.label ?? "—";
+      cell.title = result?.exactLabel ?? "—";
+    });
+  } catch {
+    // Keep the server-rendered all-time totals if a background refresh fails.
+  }
+}
+
 function applyFilters() {
   let visibleRows = 0;
   const visibleWells = [];
@@ -259,6 +299,9 @@ function applyFilters() {
 
 searchInput?.addEventListener("input", applyFilters);
 filterInputs.forEach((control) => control.addEventListener("change", applyFilters));
+document.querySelectorAll('[data-filter="start-date"], [data-filter="end-date"]').forEach((control) => {
+  control.addEventListener("change", refreshWellAbsorption);
+});
 
 // Cascading Well ID filter: narrow the "Well ID" dropdown to only the wells in the selected city, and keep the City dropdown 
 // in sync if a Well ID is picked directly. Runs on any page that has both filters (wells + map).
@@ -417,6 +460,7 @@ document.querySelectorAll(".measurement-row[data-well]").forEach((row) => {
 });
 
 applyFilters();
+refreshWellAbsorption();
 
 document.querySelector("[data-export-wells]")?.addEventListener("click", () => {
   const header = ["Well ID", "City", "Start Date", "End Date", "Duration", "Total Water Absorption", "Transmission", "Status"];
@@ -426,7 +470,8 @@ document.querySelector("[data-export-wells]")?.addEventListener("click", () => {
     .filter((row) => !row.hidden)
     .forEach((row) => {
       const well = readWell(row);
-      const values = [well.id, well.city, well.startDate, well.endDate, well.duration, well.absorption, well.transmission, well.statusLabel];
+      const absorption = row.querySelector("[data-well-absorption]")?.textContent.trim() ?? "—";
+      const values = [well.id, well.city, well.startDate, well.endDate, well.duration, absorption, well.transmission, well.statusLabel];
       csvRows.push(values.map((value) => `"${String(value ?? "").replace(/"/g, '""')}"`).join(","));
     });
 
@@ -593,7 +638,7 @@ function exportRecord(button) {
 
 document.querySelector("[data-export-measurements]")?.addEventListener("click", () => {
   const rows = Array.from(document.querySelectorAll("[data-history-row]")).filter((row) => !row.hidden);
-  const csvRows = ["Date,Well ID,Village,Water Level,Data Quality"];
+  const csvRows = ["Date,Well ID,Village,Water Absorb,Data Quality"];
   rows.forEach((row) => {
     const cells = Array.from(row.querySelectorAll("td")).slice(0, 5).map((cell) => `"${cell.textContent.trim()}"`);
     csvRows.push(cells.join(","));

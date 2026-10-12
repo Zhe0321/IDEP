@@ -37,7 +37,7 @@ sort($cities);
 <section class="panel historical-chart-panel">
   <h2>Historical Measurements</h2>
   <div class="historical-chart-wrap">
-    <canvas id="historical-chart" aria-label="Historical groundwater level chart"></canvas>
+    <canvas id="historical-chart" aria-label="Historical water absorption chart"></canvas>
   </div>
 </section>
 
@@ -46,7 +46,7 @@ sort($cities);
   <div class="table-scroll">
     <table class="operations-table">
       <thead>
-        <tr><th>Date</th><th>Well ID</th><th>Village</th><th>Water Level</th><th>Data Quality</th><th>Export</th></tr>
+        <tr><th>Date</th><th>Well ID</th><th>Village</th><th>Water Absorb</th><th>Data Quality</th><th>Export</th></tr>
       </thead>
       <tbody>
         <?php foreach ($measurementRecords as $record): ?>
@@ -55,13 +55,13 @@ sort($cities);
             data-village="<?= strtolower(htmlspecialchars($record['village'])) ?>"
             data-well-type="<?= strtolower(htmlspecialchars((string) ($record['wellType'] ?? ''))) ?>"
             data-reading-date="<?= htmlspecialchars((string) ($record['dateIso'] ?? '')) ?>"
-            data-water-value="<?= htmlspecialchars((string) ($record['waterValue'] ?? preg_replace('/[^0-9.\-]/', '', $record['waterLevel']))) ?>"
+            data-water-value="<?= htmlspecialchars((string) ($record['waterValue'] ?? preg_replace('/[^0-9.\-]/', '', $record['waterAbsorb']))) ?>"
             data-search="<?= strtolower(htmlspecialchars(implode(' ', $record))) ?>"
           >
             <td><?= htmlspecialchars($record['date']) ?></td>
             <td><?= htmlspecialchars($record['wellId']) ?></td>
             <td><?= htmlspecialchars($record['village']) ?></td>
-            <td><?= htmlspecialchars($record['waterLevel']) ?></td>
+            <td><?= htmlspecialchars($record['waterAbsorb']) ?></td>
             <td><?= htmlspecialchars($record['quality']) ?></td>
             <td><button class="export-pill" type="button" data-record-export="<?= htmlspecialchars($record['export']) ?>"><?= htmlspecialchars($record['export']) ?></button></td>
           </tr>
