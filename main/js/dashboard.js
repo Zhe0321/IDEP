@@ -8,6 +8,66 @@ const liveSensor = document.querySelector("[data-live-sensor]");
 const liveOnlineSensors = document.querySelector("[data-live-online-sensors]");
 const liveSensorStatus = document.querySelector("[data-live-sensor-status]");
 
+const programmeMetricElements = document.querySelectorAll("[data-programme-metric]");
+
+function renderProgrammeRows(selector, districts, valueKey, suffix = "") {
+  document.querySelectorAll(selector).forEach((container) => {
+    const rows = districts.map((district) => {
+      const row = document.createElement("p");
+      const name = document.createElement("span");
+      const value = document.createElement("span");
+      name.textContent = district.name;
+      value.textContent = `${district[valueKey]}${suffix}`;
+      row.append(name, value);
+      return row;
+    });
+    container.replaceChildren(...rows);
+  });
+}
+
+function renderProgrammeMetrics(metrics) {
+  const values = {
+    "well-count": metrics.wellCount,
+    "village-count": metrics.villageCount,
+    "district-count": metrics.districtCount,
+    "actual-litres": metrics.actualLitresLabel,
+    "people-supported": metrics.peopleSupportedLabel,
+    "families-supported": metrics.familiesSupportedLabel,
+  };
+
+  Object.entries(values).forEach(([name, value]) => {
+    document.querySelectorAll(`[data-programme-metric="${name}"]`).forEach((element) => {
+      element.textContent = String(value ?? "—");
+    });
+  });
+
+  const districts = Array.isArray(metrics.topDistricts) ? metrics.topDistricts : [];
+  const sensors = Array.isArray(metrics.topSensors) ? metrics.topSensors : [];
+  renderProgrammeRows("[data-programme-top-wells]", districts, "wellCount");
+  renderProgrammeRows("[data-programme-top-litres]", sensors, "litresLabel");
+}
+
+async function refreshProgrammeMetrics() {
+  try {
+    const response = await fetch("/main/api/programme-metrics.php", {
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    });
+    const payload = await response.json();
+    if (!response.ok || !payload.success || !payload.data) {
+      throw new Error(payload.message ?? "Programme statistics unavailable");
+    }
+    renderProgrammeMetrics(payload.data);
+  } catch {
+    // Keep the server-rendered figures if a background refresh fails.
+  }
+}
+
+if (programmeMetricElements.length > 0) {
+  refreshProgrammeMetrics();
+  window.setInterval(refreshProgrammeMetrics, 15_000);
+}
+
 function setLiveSensorText(selector, value) {
   const element = document.querySelector(selector);
   if (element) {

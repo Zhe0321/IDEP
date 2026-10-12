@@ -16,15 +16,15 @@ declare(strict_types=1);
 <section class="impact-values" aria-labelledby="impact-values-title">
   <div class="impact-values__heading">
     <h2 id="impact-values-title">Our Water’s Lasting Values</h2>
-    <p>Based on the attached impact analysis for 76 recharge wells using peak-performing well assumptions.</p>
+    <p>Based on the attached impact analysis for <span data-programme-metric="well-count"><?= (int)$programmeMetrics['wellCount'] ?></span> recharge wells using peak-performing well assumptions.</p>
     <p>These figures are public-facing impact estimates, not operational sensor KPIs.</p>
   </div>
 
   <div class="impact-value-grid">
     <article class="impact-value-card">
       <span class="impact-value-card__label">People Supported</span>
-      <p class="impact-value-card__metric"><strong>~498K</strong> People</p>
-      <p class="impact-value-card__note">Equal to about 124K families</p>
+      <p class="impact-value-card__metric"><strong data-programme-metric="people-supported"><?= htmlspecialchars((string)$programmeMetrics['peopleSupportedLabel']) ?></strong> People</p>
+      <p class="impact-value-card__note">Equal to about <span data-programme-metric="families-supported"><?= htmlspecialchars((string)$programmeMetrics['familiesSupportedLabel']) ?></span> families</p>
       <div class="impact-value-card__rows">
         <p><span>Ubud</span><span>Testimonial or Figure</span></p>
         <p><span>City</span><span>Testimonial or Figure</span></p>
@@ -33,22 +33,23 @@ declare(strict_types=1);
 
     <article class="impact-value-card">
       <span class="impact-value-card__label">Total Litres Absorbed</span>
-      <p class="impact-value-card__metric"><strong>9.1B L</strong> Restored Annually</p>
-      <p class="impact-value-card__note">Estimated groundwater recharge</p>
-      <div class="impact-value-card__rows">
-        <p><span>Ubud</span><span>500L Restored</span></p>
-        <p><span>City</span><span>1000L Restored</span></p>
+      <p class="impact-value-card__metric"><strong data-programme-metric="actual-litres"><?= htmlspecialchars((string)$programmeMetrics['actualLitresLabel']) ?></strong> Received by Sensors</p>
+      <p class="impact-value-card__note">Cumulative valid sensor readings</p>
+      <div class="impact-value-card__rows" data-programme-top-litres>
+        <?php foreach ($programmeMetrics['topSensors'] as $sensor): ?>
+          <p><span><?= htmlspecialchars((string)$sensor['name']) ?></span><span><?= htmlspecialchars((string)$sensor['litresLabel']) ?></span></p>
+        <?php endforeach; ?>
       </div>
     </article>
 
     <article class="impact-value-card">
       <span class="impact-value-card__label">Total Wells</span>
-      <p class="impact-value-card__metric"><strong>76</strong> Recharge Wells</p>
-      <p class="impact-value-card__note">XX Villages, XX Cities</p>
-      <div class="impact-value-card__rows">
-        <p><span>Ubud</span><span>23</span></p>
-        <p><span>Jembrana</span><span>5</span></p>
-        <p><span>Penglipuran</span><span>2</span></p>
+      <p class="impact-value-card__metric"><strong data-programme-metric="well-count"><?= (int)$programmeMetrics['wellCount'] ?></strong> Recharge Wells</p>
+      <p class="impact-value-card__note"><span data-programme-metric="village-count"><?= (int)$programmeMetrics['villageCount'] ?></span> Villages, <span data-programme-metric="district-count"><?= (int)$programmeMetrics['districtCount'] ?></span> Cities / Regencies</p>
+      <div class="impact-value-card__rows" data-programme-top-wells>
+        <?php foreach ($programmeMetrics['topDistricts'] as $district): ?>
+          <p><span><?= htmlspecialchars((string)$district['name']) ?></span><span><?= (int)$district['wellCount'] ?></span></p>
+        <?php endforeach; ?>
       </div>
     </article>
   </div>
