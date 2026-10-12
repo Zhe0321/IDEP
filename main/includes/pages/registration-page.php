@@ -16,6 +16,7 @@ sort($cities);
 </section>
 
 <div class="registration-toolbar">
+  <button class="registration-toolbar__secondary" type="button" data-open-location-manager>Add location <strong>＋</strong></button>
   <button type="button" data-open-hardware-form>Add new site <strong>＋</strong></button>
   <button type="button" data-close-hardware-form hidden>Close form <strong>×</strong></button>
 </div>
@@ -100,6 +101,8 @@ sort($cities);
   </article>
 </section>
 
+<?php require __DIR__ . '/../location-manager.php'; ?>
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   const provinceSelect    = document.getElementById('province_id');
@@ -142,6 +145,24 @@ document.addEventListener('DOMContentLoaded', function () {
     fetch(`/main/ajax-get-subdistricts.php?district_id=${this.value}`)
       .then(res => res.json())
       .then(data => populateSelect(subDistrictSelect, data, 'Select sub-district'));
+  });
+
+  // Reload the province list after locations are added/edited in the Add Location dialog.
+  document.addEventListener('idep:locations-changed', function () {
+    const selectedProvince = provinceSelect.value;
+    fetch('/main/api/locations.php?level=province', { headers: { 'X-Requested-With': 'fetch' } })
+      .then(res => res.json())
+      .then(data => {
+        if (!data.success) return;
+        populateSelect(provinceSelect, data.items, 'Select province');
+        resetSelect(districtSelect, 'Select province first');
+        resetSelect(subDistrictSelect, 'Select district first');
+        resetSelect(villageSelect, 'Select sub-district first');
+        if (data.items.some(item => String(item.id) === selectedProvince)) {
+          provinceSelect.value = selectedProvince;
+          provinceSelect.dispatchEvent(new Event('change'));
+        }
+      });
   });
 
   subDistrictSelect.addEventListener('change', function () {
