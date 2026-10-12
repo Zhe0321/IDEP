@@ -5,7 +5,6 @@ $settingsSections = [
     ['key' => 'thresholds', 'label' => 'Sensor thresholds', 'title' => 'Groundwater Monitoring Settings'],
     ['key' => 'notifications', 'label' => 'Notification rules', 'title' => 'Notification Settings'],
     ['key' => 'quality', 'label' => 'Data quality checks', 'title' => 'Data Quality Settings'],
-    ['key' => 'users', 'label' => 'User access', 'title' => 'User Access Settings'],
     ['key' => 'exports', 'label' => 'CSV / Excel defaults', 'title' => 'Export Settings'],
     ['key' => 'gis', 'label' => 'GIS layer settings', 'title' => 'GIS Layer Settings'],
 ];

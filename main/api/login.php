@@ -31,14 +31,21 @@ try {
     $statement->execute(['identity' => $username]);
     $user = $statement->fetch();
 
-    if ($user !== false && ($user['status'] === null || (int) $user['status'] === 1)) {
+    if ($user !== false) {
+        $storedRole = strtolower(trim((string) ($user['status'] ?? '')));
+        $role = match ($storedRole) {
+            'admin', 'manager' => $storedRole,
+            '1' => (string) $user['username'] === 'admin123' ? 'admin' : 'manager',
+            default => null,
+        };
         $storedPassword = (string) $user['password'];
         $isHash = password_get_info($storedPassword)['algo'] !== null;
         $passwordMatches = $isHash
             ? password_verify($password, $storedPassword)
             : hash_equals($storedPassword, $password);
 
-        if ($passwordMatches) {
+        if ($role !== null && $passwordMatches) {
+            $user['role'] = $role;
             $authenticatedUser = $user;
         }
     }
@@ -55,6 +62,7 @@ if ($authenticatedUser === null && $isLocalhost && $username === 'admin123' && $
         'name' => 'Field Team',
         'email' => '',
         'username' => 'admin123',
+        'role' => 'admin',
     ];
 }
 
@@ -74,9 +82,11 @@ session_regenerate_id(true);
 $_SESSION['idep_admin'] = true;
 $_SESSION['idep_user_id'] = (int) $authenticatedUser['id'];
 $_SESSION['idep_user_name'] = (string) $authenticatedUser['name'];
+$_SESSION['idep_role'] = (string) $authenticatedUser['role'];
 
 echo json_encode([
     'success' => true,
     'message' => 'Signed in successfully.',
+    'role' => (string) $authenticatedUser['role'],
     'redirect' => '/main/admin-dashboard.php',
 ]);

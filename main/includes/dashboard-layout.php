@@ -25,6 +25,34 @@ if ($isAdmin) {
         $nameParts = preg_split('/\s+/', trim($userName)) ?: [];
         $userInitials = strtoupper(implode('', array_map(static fn (string $part): string => $part[0] ?? '', array_slice($nameParts, 0, 2))));
     }
+    $sessionRole = strtolower((string) ($_SESSION['idep_role'] ?? ''));
+    if (!in_array($sessionRole, ['admin', 'manager'], true)) {
+        if ((int) ($_SESSION['idep_user_id'] ?? -1) === 0) {
+            $sessionRole = 'admin';
+        } else {
+            try {
+                require_once dirname(__DIR__, 2) . '/database/db.php';
+                $roleStatement = idepDatabase()->prepare('SELECT username, status FROM user WHERE id = :id LIMIT 1');
+                $roleStatement->execute([':id' => (int) ($_SESSION['idep_user_id'] ?? 0)]);
+                $sessionUser = $roleStatement->fetch();
+                $storedRole = strtolower((string) ($sessionUser['status'] ?? ''));
+                $sessionRole = in_array($storedRole, ['admin', 'manager'], true)
+                    ? $storedRole
+                    : (($sessionUser['username'] ?? '') === 'admin123' ? 'admin' : 'manager');
+                $_SESSION['idep_role'] = $sessionRole;
+            } catch (Throwable) {
+                $sessionRole = 'manager';
+            }
+        }
+    }
+    $canManageUsers = $sessionRole === 'admin';
+    $userRole = $canManageUsers ? 'Administrator' : 'Manager';
+    if ($currentPage === 'users' && !$canManageUsers) {
+        http_response_code(403);
+        exit('Administrator access is required.');
+    }
+} else {
+    $canManageUsers = false;
 }
 
 require __DIR__ . '/well-data.php';
@@ -66,7 +94,11 @@ $pageDetails = [
     ],
     'settings' => [
         'title' => 'Settings',
-        'subtitle' => 'Sensor thresholds, users, notification rules and integrations',
+        'subtitle' => 'Sensor thresholds, notification rules and integrations',
+    ],
+    'users' => [
+        'title' => 'User Management',
+        'subtitle' => 'Create manager accounts and control access to the monitoring workspace',
     ],
 ];
 
@@ -93,6 +125,7 @@ $navIcons = [
     'reports' => '<svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v5h4M9 12h6M9 16h6"/></svg>',
     'registration' => '<svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M9 5V3h6v2M8 10h8"/></svg>',
     'settings' => '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.6v-.2h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></svg>',
+    'users' => '<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3.5 20v-2.2A4.8 4.8 0 0 1 8.3 13h1.4a4.8 4.8 0 0 1 4.8 4.8V20M16 9h5M18.5 6.5v5"/></svg>',
 ];
 ?>
 <!doctype html>
@@ -143,6 +176,9 @@ $navIcons = [
           <a class="<?= $currentPage === 'reports' ? 'active' : '' ?>" href="/main/admin-reports.php"><span class="nav-icon" aria-hidden="true"><?= $navIcons['reports'] ?></span>Reports</a>
           <a class="<?= $currentPage === 'registration' ? 'active' : '' ?>" href="/main/admin-site-registration.php"><span class="nav-icon" aria-hidden="true"><?= $navIcons['registration'] ?></span>Site Registration</a>
           <a class="<?= $currentPage === 'settings' ? 'active' : '' ?>" href="/main/admin-settings.php"><span class="nav-icon" aria-hidden="true"><?= $navIcons['settings'] ?></span>Settings</a>
+          <?php if ($canManageUsers): ?>
+            <a class="<?= $currentPage === 'users' ? 'active' : '' ?>" href="/main/admin-user-management.php"><span class="nav-icon" aria-hidden="true"><?= $navIcons['users'] ?></span>User Management</a>
+          <?php endif; ?>
         <?php endif; ?>
       </nav>
 
