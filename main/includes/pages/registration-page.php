@@ -34,9 +34,11 @@ sort($cities);
   <input type="hidden" name="well_id" value="">
   <div class="hardware-form-grid">
     <label><span>ID/Name</span><input name="name" required></label>
-    <label><span>Sensor Device ID</span><input name="sensor_id" required></label>
+    <label><span>Sensor Device ID</span><input name="sensor_id" placeholder="Optional until a sensor is connected"></label>
     <label><span>Installer / Contractor Name</span><input name="installer" required></label>
-    <label><span>Type of well</span><select name="type" required><option value="">Select type</option><option>Type 1</option><option>Type 2</option><option>Type 3</option><option>Type 4</option></select></label>
+    <label><span>Type of well</span><select name="type" required><option value="">Select type</option><option>Boring Well</option><option>Monitoring Well</option><option>Manual Well</option></select></label>
+    <label><span>Depth (metres)</span><input name="depth" inputmode="decimal"></label>
+    <label><span>Absorbance Capacity</span><input name="absorption" placeholder="e.g. 2 m3/hr"></label>
     <label><span>Installation Date</span><input name="date" type="date" required></label>
     <label><span>Longitude</span><input name="longitude" inputmode="decimal"></label>
 
@@ -68,6 +70,7 @@ sort($cities);
     </label>
 
     <label><span>Latitude</span><input name="latitude" inputmode="decimal"></label>
+    <label class="hardware-form-grid__wide"><span>Address</span><input name="address"></label>
   </div>
   <div class="hardware-form-actions"><span data-hardware-message hidden></span><button type="submit" data-hardware-submit>Add device</button></div>
 </form>
@@ -78,15 +81,16 @@ sort($cities);
     <h3>Hardware List</h3>
     <div class="table-scroll">
       <table class="operations-table hardware-table">
-        <thead><tr><th>ID Device and location</th><th>Hardware tracking</th><th>Date added</th><th>Installation Details</th><th>Edit/Delete</th></tr></thead>
+        <thead><tr><th>Well ID / Site</th><th>Type / Depth</th><th>District</th><th>Absorbance</th><th>Sensor</th><th>Installed</th><th>Edit/Delete</th></tr></thead>
         <tbody data-hardware-table>
           <?php if (empty($hardwareRecords)): ?>
-            <tr><td colspan="5">No hardware registered yet.</td></tr>
+            <tr><td colspan="7">No sites registered yet.</td></tr>
           <?php else: ?>
             <?php foreach ($hardwareRecords as $record): ?>
               <tr
                 data-hardware-row
                 data-well-id="<?= (int)($record['wellId'] ?? 0) ?>"
+                data-well-code="<?= htmlspecialchars($record['wellCode'] ?? '') ?>"
                 data-name="<?= htmlspecialchars($record['name'] ?? '') ?>"
                 data-city="<?= htmlspecialchars($record['city'] ?? '') ?>"
                 data-mac="<?= htmlspecialchars($record['mac'] ?? '') ?>"
@@ -98,13 +102,18 @@ sort($cities);
                 data-date="<?= htmlspecialchars($record['date'] ?? '') ?>"
                 data-installer="<?= htmlspecialchars($record['installer'] ?? '') ?>"
                 data-type="<?= htmlspecialchars($record['type'] ?? '') ?>"
+                data-depth="<?= htmlspecialchars((string)($record['depth'] ?? '')) ?>"
+                data-absorption="<?= htmlspecialchars($record['absorption'] ?? '') ?>"
+                data-address="<?= htmlspecialchars($record['address'] ?? '') ?>"
                 data-longitude="<?= htmlspecialchars((string)($record['longitude'] ?? '')) ?>"
                 data-latitude="<?= htmlspecialchars((string)($record['latitude'] ?? '')) ?>"
               >
-                <td><?= htmlspecialchars($record['name'] ?? '') ?> - <?= htmlspecialchars($record['city'] ?? '') ?></td>
-                <td>Sensor: <?= htmlspecialchars($record['sensorDeviceId'] ?? '—') ?></td>
+                <td><strong><?= htmlspecialchars($record['wellCode'] ?? '') ?></strong><br><?= htmlspecialchars($record['name'] ?? '') ?></td>
+                <td><?= htmlspecialchars($record['type'] ?? '—') ?><br><?= $record['depth'] !== null ? htmlspecialchars((string)$record['depth']) . ' m' : '—' ?></td>
+                <td><?= htmlspecialchars($record['city'] ?? '') ?><br><small><?= htmlspecialchars($record['address'] ?? '—') ?></small></td>
+                <td><?= htmlspecialchars($record['absorption'] ?? '—') ?></td>
+                <td><?= htmlspecialchars($record['sensorDeviceId'] ?? 'No Signal') ?></td>
                 <td><?= htmlspecialchars($record['displayDate'] ?? '') ?></td>
-                <td><?= htmlspecialchars($record['installer'] ?? '') ?></td>
                 <td><button class="row-icon-button" type="button" data-edit-row aria-label="Edit <?= htmlspecialchars($record['name'] ?? '') ?>">✎</button><button class="row-icon-button" type="button" data-remove-row aria-label="Delete <?= htmlspecialchars($record['name'] ?? '') ?>">▣</button></td>
               </tr>
             <?php endforeach; ?>

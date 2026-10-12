@@ -25,3 +25,8 @@ $sql = file_get_contents($schemaPath);
 $pdo->exec($sql);
 
 echo "Database built successfully at {$dbPath}\n";
+
+// Populate the shared Bali location hierarchy and the 81 recharge wells
+// supplied in "LIST OF RECHARGE WELLS IN BALI.xlsx".
+require __DIR__ . '/import_bali_wilayah.php';
+require __DIR__ . '/import_recharge_wells.php';

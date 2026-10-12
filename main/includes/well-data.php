@@ -808,7 +808,7 @@ $wells = [
     ],
     [
         'id' => 'RCH-032',
-        'name' => 'Farmer\'s garden (I Wayan Sujana 2)',
+        'name' => 'Farmer\'s garden (I Wayan Sujana)',
         'city' => 'Tabanan',
         'lat' => -8.2875,
         'lng' => 115.153889,
@@ -2064,7 +2064,10 @@ $wells = [
     ],
 ];
 
-// Merge in wells registered via the admin Site Registration form
+// Merge in wells registered via the admin Site Registration form.
+// Import tooling can opt out so its normalized source is not overwritten by
+// an older copy of the same records already stored in the database.
+if (!($skipDatabaseWellMerge ?? false)) {
 require_once __DIR__ . '/../../database/db.php';
 
 try {
@@ -2076,6 +2079,10 @@ try {
             w.latitude,
             w.longitude,
             w.well_depth,
+            w.well_type,
+            w.absorption_capacity,
+            w.address,
+            w.photo_path,
             w.installer_name,
             w.installation_date,
             COALESCE(dc.name, '—') AS city_name,
@@ -2099,12 +2106,22 @@ foreach ($dbWells as $row) {
         : '—';
 
     $hasCoords = $row['latitude'] !== null && $row['longitude'] !== null;
+    $cityName = preg_replace('/^(KAB\.|KOTA)\s+/i', '', (string)$row['city_name']) ?? (string)$row['city_name'];
+    $cityName = ucwords(strtolower($cityName));
+    $absorption = trim((string)($row['absorption_capacity'] ?? ''));
+    $litresMinute = '—';
+    $litresHour = '—';
+    if (preg_match('/\d+(?:[.,]\d+)?/', $absorption, $capacityMatch) === 1) {
+        $cubicMetresPerHour = (float)str_replace(',', '.', $capacityMatch[0]);
+        $litresMinute = number_format($cubicMetresPerHour * 1000 / 60, 1) . ' L/min';
+        $litresHour = number_format($cubicMetresPerHour * 1000, 0) . ' L/hour';
+    }
 
-    $wells[] = [
+    $databaseWell = [
         'id' => $row['well_code'],
         'deviceId' => $row['sensor_device_id'],
         'name' => $row['well_name'],
-        'city' => $row['city_name'],
+        'city' => $cityName,
         'lat' => $hasCoords ? (float)$row['latitude'] : null,
         'lng' => $hasCoords ? (float)$row['longitude'] : null,
         'status' => 'no-signal',
@@ -2114,17 +2131,25 @@ foreach ($dbWells as $row) {
         'endDate' => '—',
         'endDateISO' => null,
         'duration' => 'Ongoing',
-        'absorption' => '—',
+        'absorption' => $absorption !== '' ? $absorption : '—',
         'transmission' => 'No Signal',
         'lastTransmission' => '—',
-        'wellType' => 'Registered Well',
-        'litresMinute' => '—',
-        'litresHour' => '—',
+        'wellType' => $row['well_type'] ?: 'Registered Well',
+        'litresMinute' => $litresMinute,
+        'litresHour' => $litresHour,
         'volume' => '—',
-        'inflow' => '—',
+        'inflow' => $absorption !== '' ? $absorption : '—',
         'depth' => $row['well_depth'] !== null ? $row['well_depth'] . ' meters' : '—',
-        'address' => $row['city_name'],
-        'photo' => $wellPhoto,
+        'address' => $row['address'] ?: $cityName,
+        'photo' => $row['photo_path'] ?: $wellPhoto,
         'locationPending' => !$hasCoords,
     ];
+
+    $existingIndex = array_search($row['well_code'], array_column($wells, 'id'), true);
+    if ($existingIndex !== false) {
+        $wells[$existingIndex] = $databaseWell;
+    } else {
+        $wells[] = $databaseWell;
+    }
+}
 }
