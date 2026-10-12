@@ -7,5 +7,6 @@ $userName = 'Public Viewer';
 $userRole = 'Public User';
 $accessLabel = 'PUBLIC USER';
 $accessDescription = 'Read-only monitoring access';
+$currentPage = 'dashboard';
 
 require __DIR__ . '/includes/dashboard-layout.php';
