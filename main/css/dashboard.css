@@ -1241,6 +1241,16 @@ body[data-page="impacts"] .sidebar {
   background: rgba(255, 247, 232, 0.96);
 }
 
+.leaflet-live-device__label--no-signal {
+  border-color: rgba(126, 135, 143, 0.35);
+  color: #69737c;
+}
+
+.leaflet-live-device__label--offline {
+  border-color: rgba(198, 61, 53, 0.3);
+  color: var(--red);
+}
+
 .leaflet-well-dot--online.leaflet-well-dot--live {
   animation: live-sensor-pulse 1.8s ease-out infinite;
 }
@@ -1305,6 +1315,24 @@ body[data-page="impacts"] .sidebar {
   height: 7px;
   border-radius: 50%;
   background: var(--green);
+}
+
+.well-popup__live-badge--no-signal {
+  background: #edf0f2;
+  color: #69737c;
+}
+
+.well-popup__live-badge--no-signal i {
+  background: var(--grey);
+}
+
+.well-popup__live-badge--offline {
+  background: #fbe7e5;
+  color: var(--red);
+}
+
+.well-popup__live-badge--offline i {
+  background: var(--red);
 }
 
 .well-popup .well-popup__city {
