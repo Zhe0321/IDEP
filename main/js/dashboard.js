@@ -902,6 +902,9 @@ async function startHardwareEdit(row) {
   setHardwareFormValue("sensor_id", row.dataset.sensorId);
   setHardwareFormValue("installer", row.dataset.installer);
   setHardwareFormValue("type", row.dataset.type);
+  setHardwareFormValue("depth", row.dataset.depth);
+  setHardwareFormValue("absorption", row.dataset.absorption);
+  setHardwareFormValue("address", row.dataset.address);
   setHardwareFormValue("date", row.dataset.date);
   setHardwareFormValue("longitude", row.dataset.longitude);
   setHardwareFormValue("latitude", row.dataset.latitude);

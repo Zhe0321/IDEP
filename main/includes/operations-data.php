@@ -135,6 +135,7 @@ try {
     $hardwareRecords = $pdo->query("
         SELECT
             w.id AS wellId,
+            w.well_code AS wellCode,
             w.well_name AS name,
             COALESCE(dc.name, '—') AS city,
             COALESCE(s.id_device, '—') AS mac,
@@ -150,7 +151,10 @@ try {
                 ELSE '—'
             END AS displayDate,
             COALESCE(w.installer_name, '—') AS installer,
-            COALESCE(s.sensor_type, '—') AS type,
+            COALESCE(w.well_type, s.sensor_type, '—') AS type,
+            w.well_depth AS depth,
+            COALESCE(w.absorption_capacity, '—') AS absorption,
+            COALESCE(w.address, '—') AS address,
             w.longitude,
             w.latitude
         FROM wells w
@@ -161,6 +165,11 @@ try {
         LEFT JOIN sensors s ON s.id = w.sensor_id
         ORDER BY w.id DESC
     ")->fetchAll();
+    foreach ($hardwareRecords as &$record) {
+        $city = preg_replace('/^(KAB\.|KOTA)\s+/i', '', (string)$record['city']) ?? (string)$record['city'];
+        $record['city'] = ucwords(strtolower($city));
+    }
+    unset($record);
 } catch (Throwable $e) {
     $hardwareRecords = [];
     error_log('Hardware query failed: ' . $e->getMessage());
