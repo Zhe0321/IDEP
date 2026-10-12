@@ -36,7 +36,19 @@ sort($cities);
     <label><span>ID/Name</span><input name="name" required></label>
     <label><span>Sensor Device ID</span><input name="sensor_id" placeholder="Optional until a sensor is connected"></label>
     <label><span>Installer / Contractor Name</span><input name="installer" required></label>
-    <label><span>Type of well</span><select name="type" required><option value="">Select type</option><option>Boring Well</option><option>Monitoring Well</option><option>Manual Well</option></select></label>
+    <label>
+      <span>Type of well</span>
+      <select name="type" required>
+        <option value="">Select type</option>
+        <option>Type 1</option>
+        <option>Type 2</option>
+        <option>Type 3</option>
+        <option>Type 4</option>
+        <option>Boring Well</option>
+        <option>Monitoring Well</option>
+        <option>Manual Well</option>
+      </select>
+    </label>
     <label><span>Depth (metres)</span><input name="depth" inputmode="decimal"></label>
     <label><span>Absorbance Capacity</span><input name="absorption" placeholder="e.g. 2 m3/hr"></label>
     <label><span>Installation Date</span><input name="date" type="date" required></label>
