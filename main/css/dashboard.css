@@ -1852,6 +1852,10 @@ body[data-page="impacts"] .sidebar {
   padding: 10px 8px;
 }
 
+.hardware-form-grid .hardware-form-grid__wide {
+  grid-column: 1 / -1;
+}
+
 .hardware-form-grid span {
   font-size: 10px;
 }
@@ -2411,6 +2415,10 @@ body[data-page="impacts"] .sidebar {
 
   .hardware-form-grid {
     grid-template-columns: 1fr;
+  }
+
+  .hardware-form-grid .hardware-form-grid__wide {
+    grid-column: auto;
   }
 
   .user-form-grid {

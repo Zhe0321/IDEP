@@ -82,6 +82,10 @@ CREATE TABLE wells (
     latitude REAL,
     longitude REAL,
     well_depth REAL,                            
+    well_type TEXT,
+    absorption_capacity TEXT,
+    address TEXT,
+    source_reference TEXT,
     sensor_id INTEGER UNIQUE,                   -- references sensors.id
     installer_name TEXT,
     installation_date TEXT,
