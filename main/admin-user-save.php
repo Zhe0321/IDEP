@@ -65,7 +65,7 @@ try {
         if ($password !== '') {
             // Plain text is retained for this classroom prototype, as requested.
             $sql .= ', password = :password';
-            $values[':password'] = $password;
+            $values[':password'] = password_hash($password, PASSWORD_DEFAULT);
         }
         $sql .= ' WHERE id = :id';
         $statement = $pdo->prepare($sql);
@@ -79,7 +79,7 @@ try {
             ':name' => $name,
             ':username' => $username,
             ':email' => $email,
-            ':password' => $password,
+            ':password' => password_hash($password, PASSWORD_DEFAULT),
             ':status' => $role,
         ]);
         $userId = (int) $pdo->lastInsertId();

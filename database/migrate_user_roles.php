@@ -7,6 +7,9 @@ $pdo = idepDatabase();
 $pdo->beginTransaction();
 
 try {
+    $adminPassword = password_hash('admin123', PASSWORD_DEFAULT);
+    $managerPassword = password_hash('manager123', PASSWORD_DEFAULT);
+
     $normaliseRoles = $pdo->prepare(
         "UPDATE user
          SET status = CASE
@@ -28,7 +31,7 @@ try {
         ':name' => 'Field Team',
         ':username' => 'admin123',
         ':email' => 'admin@ideptraining.com',
-        ':password' => 'admin123',
+        ':password' => $adminPassword,
     ]);
 
     $managerStatement = $pdo->prepare(
@@ -40,8 +43,24 @@ try {
         ':name' => 'Field Manager',
         ':username' => 'manager123',
         ':email' => 'manager@ideptraining.com',
-        ':password' => 'manager123',
+        ':password' => $managerPassword,
     ]);
+
+    $users = $pdo->query('SELECT id, password FROM user')->fetchAll();
+    $passwordUpdate = $pdo->prepare(
+        'UPDATE user SET password = :password, updated_at = CURRENT_TIMESTAMP WHERE id = :id'
+    );
+    foreach ($users as $user) {
+        $storedPassword = (string) $user['password'];
+        if (password_get_info($storedPassword)['algo'] !== null) {
+            continue;
+        }
+
+        $passwordUpdate->execute([
+            ':id' => (int) $user['id'],
+            ':password' => password_hash($storedPassword, PASSWORD_DEFAULT),
+        ]);
+    }
 
     $pdo->commit();
     echo "User roles and demonstration accounts are ready.\n";
