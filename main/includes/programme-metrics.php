@@ -24,6 +24,15 @@ function idepCompactNumber(float $value, int $decimals = 1): string
     return number_format($value, 0, '.', ',');
 }
 
+function idepLitresDisplayLabel(float $litres): string
+{
+    if (abs($litres) < 1_000) {
+        return number_format($litres, 2, '.', ',') . ' L';
+    }
+
+    return idepCompactNumber($litres) . ' L';
+}
+
 function idepDistrictDisplayName(string $name): string
 {
     $name = preg_replace('/^(KAB\.|KOTA)\s+/i', '', trim($name)) ?? trim($name);
@@ -116,7 +125,8 @@ function idepProgrammeMetrics(?PDO $pdo = null): array
         $topSensors[] = [
             'name' => (string)$sensor['id_device'],
             'litres' => round($sensorLitres, 2),
-            'litresLabel' => number_format($sensorLitres, 2, '.', ',') . ' L',
+            'litresLabel' => idepLitresDisplayLabel($sensorLitres),
+            'litresExactLabel' => number_format($sensorLitres, 2, '.', ',') . ' L',
             'lastReceivedAt' => (string)($sensor['last_received_at'] ?? ''),
         ];
     }
@@ -126,7 +136,8 @@ function idepProgrammeMetrics(?PDO $pdo = null): array
         'villageCount' => (int)($summary['village_count'] ?? 0),
         'districtCount' => (int)($summary['district_count'] ?? 0),
         'actualLitres' => round($actualLitres, 2),
-        'actualLitresLabel' => number_format($actualLitres, 2, '.', ',') . ' L',
+        'actualLitresLabel' => idepLitresDisplayLabel($actualLitres),
+        'actualLitresExactLabel' => number_format($actualLitres, 2, '.', ',') . ' L',
         'peopleSupported' => $peopleSupported,
         'peopleSupportedLabel' => '~' . idepCompactNumber($peopleSupported, 0),
         'familiesSupported' => $familiesSupported,

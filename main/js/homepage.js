@@ -24,7 +24,7 @@ if ("IntersectionObserver" in window) {
 
 const programmeMetricElements = document.querySelectorAll("[data-programme-metric]");
 
-function renderProgrammeRows(selector, districts, valueKey, suffix = "") {
+function renderProgrammeRows(selector, districts, valueKey, suffix = "", titleKey = "") {
   document.querySelectorAll(selector).forEach((container) => {
     const rows = districts.map((district) => {
       const row = document.createElement("p");
@@ -32,6 +32,9 @@ function renderProgrammeRows(selector, districts, valueKey, suffix = "") {
       const value = document.createElement("span");
       name.textContent = district.name;
       value.textContent = `${district[valueKey]}${suffix}`;
+      if (titleKey && district[titleKey]) {
+        value.title = district[titleKey];
+      }
       row.append(name, value);
       return row;
     });
@@ -52,13 +55,16 @@ function renderProgrammeMetrics(metrics) {
   Object.entries(values).forEach(([name, value]) => {
     document.querySelectorAll(`[data-programme-metric="${name}"]`).forEach((element) => {
       element.textContent = String(value ?? "—");
+      if (name === "actual-litres") {
+        element.title = metrics.actualLitresExactLabel ?? "";
+      }
     });
   });
 
   const districts = Array.isArray(metrics.topDistricts) ? metrics.topDistricts : [];
   const sensors = Array.isArray(metrics.topSensors) ? metrics.topSensors : [];
   renderProgrammeRows("[data-programme-top-wells]", districts, "wellCount");
-  renderProgrammeRows("[data-programme-top-litres]", sensors, "litresLabel");
+  renderProgrammeRows("[data-programme-top-litres]", sensors, "litresLabel", "", "litresExactLabel");
 }
 
 async function refreshProgrammeMetrics() {
