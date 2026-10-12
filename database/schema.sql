@@ -36,6 +36,7 @@ CREATE TABLE village (
     code TEXT,                                 
     name TEXT NOT NULL,
     sub_district_id INTEGER NOT NULL,
+    type TEXT,                                  -- 'desa' or 'kelurahan'
     status INTEGER,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT,

@@ -23,6 +23,7 @@ sort($cities);
 </section>
 
 <div class="registration-toolbar">
+  <button class="registration-toolbar__secondary" type="button" data-open-location-manager>Add location <strong>＋</strong></button>
   <button type="button" data-open-hardware-form>Add new site <strong>＋</strong></button>
   <button type="button" data-close-hardware-form hidden>Close form <strong>×</strong></button>
 </div>
@@ -114,3 +115,5 @@ sort($cities);
     <footer class="hardware-list-footer"><span>Rows per page <select><option>10</option></select></span><span data-hardware-count>Showing <?= count($hardwareRecords ?? []) ?> entries</span><div><button type="button">←</button><button type="button">→</button></div></footer>
   </article>
 </section>
+
+<?php require __DIR__ . '/../location-manager.php'; ?>
