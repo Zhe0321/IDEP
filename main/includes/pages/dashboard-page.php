@@ -17,7 +17,7 @@ $mapMode = 'compact';
 <section class="stats-grid" aria-label="Programme statistics">
   <article class="stat-card">
     <span class="stat-icon" aria-hidden="true">◊</span>
-    <div><span>Recharge Wells</span><strong>76</strong><small>IDEP project reference</small></div>
+    <div><span>Recharge Wells</span><strong data-programme-metric="well-count"><?= (int)$programmeMetrics['wellCount'] ?></strong><small>Active database records</small></div>
   </article>
   <article class="stat-card">
     <span class="stat-icon" aria-hidden="true">≈</span>

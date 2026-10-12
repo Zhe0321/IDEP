@@ -1,6 +1,24 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/includes/programme-metrics.php';
+
+try {
+    $programmeMetrics = idepProgrammeMetrics();
+} catch (Throwable $error) {
+    error_log('Homepage programme metrics failed: ' . $error->getMessage());
+    $programmeMetrics = [
+        'wellCount' => 0,
+        'villageCount' => 0,
+        'districtCount' => 0,
+        'actualLitresLabel' => '—',
+        'peopleSupportedLabel' => '—',
+        'familiesSupportedLabel' => '—',
+        'topDistricts' => [],
+        'topSensors' => [],
+    ];
+}
+
 $homepageCssVersion = (string) filemtime(__DIR__ . '/css/homepage.css');
 $homepageJsVersion = (string) filemtime(__DIR__ . '/js/homepage.js');
 ?>
@@ -67,15 +85,15 @@ $homepageJsVersion = (string) filemtime(__DIR__ . '/js/homepage.js');
       <div class="page-shell">
         <div class="section-heading reveal">
           <h2>Our Water’s Lasting Values</h2>
-          <p>Based on the attached impact analysis for 76 recharge wells using peak-performing well assumptions.</p>
+          <p>Based on the attached impact analysis for <span data-programme-metric="well-count"><?= (int)$programmeMetrics['wellCount'] ?></span> recharge wells using peak-performing well assumptions.</p>
           <p>These figures are public-facing impact estimates, not operational sensor KPIs.</p>
         </div>
 
         <div class="card-grid impact-grid">
           <article class="impact-card reveal">
             <span class="card-label">People Supported</span>
-            <p class="feature-metric"><strong>~498K</strong> <span>People</span></p>
-            <p class="card-note">Equal to about 124K families</p>
+            <p class="feature-metric"><strong data-programme-metric="people-supported"><?= htmlspecialchars((string)$programmeMetrics['peopleSupportedLabel']) ?></strong> <span>People</span></p>
+            <p class="card-note">Equal to about <span data-programme-metric="families-supported"><?= htmlspecialchars((string)$programmeMetrics['familiesSupportedLabel']) ?></span> families</p>
             <div class="card-lines card-lines--rows">
               <p><span>Ubud</span><span>Testimonial or Figure</span></p>
               <p><span>City</span><span>Testimonial or Figure</span></p>
@@ -84,22 +102,23 @@ $homepageJsVersion = (string) filemtime(__DIR__ . '/js/homepage.js');
 
           <article class="impact-card reveal">
             <span class="card-label">Total Litres Absorbed</span>
-            <p class="feature-metric"><strong>9.1B L</strong> <span>Restored Annually</span></p>
-            <p class="card-note">Estimated groundwater recharge</p>
-            <div class="card-lines card-lines--rows">
-              <p><span>Ubud</span><span>500L Restored</span></p>
-              <p><span>City</span><span>1000L Restored</span></p>
+            <p class="feature-metric"><strong data-programme-metric="actual-litres"><?= htmlspecialchars((string)$programmeMetrics['actualLitresLabel']) ?></strong> <span>Received by Sensors</span></p>
+            <p class="card-note">Cumulative valid sensor readings</p>
+            <div class="card-lines card-lines--rows" data-programme-top-litres>
+              <?php foreach ($programmeMetrics['topSensors'] as $sensor): ?>
+                <p><span><?= htmlspecialchars((string)$sensor['name']) ?></span><span><?= htmlspecialchars((string)$sensor['litresLabel']) ?></span></p>
+              <?php endforeach; ?>
             </div>
           </article>
 
           <article class="impact-card reveal">
             <span class="card-label">Total Wells</span>
-            <p class="feature-metric"><strong>76</strong> <span>Recharge Wells</span></p>
-            <p class="card-note">XX Villages, XX Cities</p>
-            <div class="card-lines card-lines--rows">
-              <p><span>Ubud</span><span>23</span></p>
-              <p><span>Jembrana</span><span>5</span></p>
-              <p><span>Penglipuran</span><span>2</span></p>
+            <p class="feature-metric"><strong data-programme-metric="well-count"><?= (int)$programmeMetrics['wellCount'] ?></strong> <span>Recharge Wells</span></p>
+            <p class="card-note"><span data-programme-metric="village-count"><?= (int)$programmeMetrics['villageCount'] ?></span> Villages, <span data-programme-metric="district-count"><?= (int)$programmeMetrics['districtCount'] ?></span> Cities / Regencies</p>
+            <div class="card-lines card-lines--rows" data-programme-top-wells>
+              <?php foreach ($programmeMetrics['topDistricts'] as $district): ?>
+                <p><span><?= htmlspecialchars((string)$district['name']) ?></span><span><?= (int)$district['wellCount'] ?></span></p>
+              <?php endforeach; ?>
             </div>
           </article>
         </div>
@@ -110,7 +129,7 @@ $homepageJsVersion = (string) filemtime(__DIR__ . '/js/homepage.js');
       <div class="page-shell">
         <div class="section-heading reveal">
           <h2>IDEP’s Sustainability Passion</h2>
-          <p>Based on the attached impact analysis for 76 recharge wells using peak-performing well assumptions.</p>
+          <p>Based on the attached impact analysis for <span data-programme-metric="well-count"><?= (int)$programmeMetrics['wellCount'] ?></span> recharge wells using peak-performing well assumptions.</p>
           <p>These figures are public-facing impact estimates, not operational sensor KPIs.</p>
         </div>
 
