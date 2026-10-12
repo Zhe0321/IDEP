@@ -187,18 +187,20 @@ function wellMatches(well, searchableText = "") {
   const endDate = activeFilter("end-date");
   const searchHaystack = `${well.id ?? ""} ${well.name ?? ""} ${well.city ?? ""} ${well.statusLabel ?? ""} ${searchableText}`.toLowerCase();
 
-  // The well's monitoring window (startDateISO –> endDateISO) overlaps the requested range as long as 
-  // it doesn't end before the range starts, or start after the range ends.
-  const wellStart = well.startDateISO ?? "";
-  const wellEnd = well.endDateISO ?? "";
-  const withinStart = !startDate || !wellEnd || wellEnd >= startDate;
-  const withinEnd = !endDate || !wellStart || wellStart <= endDate;
+  // Date filters show wells that actually transmitted during the requested
+  // period. The reading range must overlap the selected range.
+  const readingStart = well.readingStartISO ?? "";
+  const readingEnd = well.readingEndISO ?? "";
+  const hasReadingsWhenRequired = (!startDate && !endDate) || Boolean(readingStart && readingEnd);
+  const withinStart = !startDate || readingEnd >= startDate;
+  const withinEnd = !endDate || readingStart <= endDate;
 
   return (
     (!query || searchHaystack.includes(query)) &&
     (!city || String(well.city ?? "").toLowerCase() === city) &&
     (!id || String(well.id ?? "").toLowerCase() === id) &&
     (!status || well.status === status) &&
+    hasReadingsWhenRequired &&
     withinStart &&
     withinEnd
   );

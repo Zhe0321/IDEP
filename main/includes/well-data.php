@@ -2064,7 +2064,9 @@ try {
             latest.h1 AS latest_h1,
             latest.h2 AS latest_h2,
             latest.hasil AS latest_hasil,
-            latest.received_at AS latest_received_at
+            latest.received_at AS latest_received_at,
+            reading_span.first_received_at,
+            reading_span.last_received_at
         FROM wells w
         LEFT JOIN village v ON v.id = w.village_id
         LEFT JOIN sub_district sd ON sd.id = v.sub_district_id
@@ -2077,6 +2079,14 @@ try {
             ORDER BY sr.received_at DESC, sr.id DESC
             LIMIT 1
         )
+        LEFT JOIN (
+            SELECT
+                sensor_id,
+                MIN(received_at) AS first_received_at,
+                MAX(received_at) AS last_received_at
+            FROM sensor_readings
+            GROUP BY sensor_id
+        ) reading_span ON reading_span.sensor_id = s.id
         ORDER BY w.id DESC
     ")->fetchAll();
 } catch (Throwable $e) {
@@ -2085,7 +2095,11 @@ try {
 }
 
 foreach ($dbWells as $row) {
-    $installDateIso = $row['installation_date'] ?: null;
+    $firstReadingAt = $row['first_received_at'] ?: null;
+    $lastReadingAt = $row['last_received_at'] ?: null;
+    $firstReadingDateIso = $firstReadingAt !== null ? substr((string)$firstReadingAt, 0, 10) : null;
+    $lastReadingDateIso = $lastReadingAt !== null ? substr((string)$lastReadingAt, 0, 10) : null;
+    $installDateIso = $row['installation_date'] ?: $firstReadingDateIso;
     $installDateDisplay = $installDateIso
         ? date('d F Y', strtotime($installDateIso))
         : '—';
@@ -2133,6 +2147,8 @@ foreach ($dbWells as $row) {
         'statusLabel' => $sensorStatusLabel,
         'startDate' => $installDateDisplay,
         'startDateISO' => $installDateIso,
+        'readingStartISO' => $firstReadingDateIso,
+        'readingEndISO' => $lastReadingDateIso,
         'endDate' => '—',
         'endDateISO' => null,
         'duration' => 'Ongoing',
