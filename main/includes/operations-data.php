@@ -37,7 +37,7 @@ if (($currentPage ?? '') === 'historical' && is_file($databaseBootstrap)) {
                 'wellId' => $well['id'] ?? (string) $reading['id_device'],
                 'village' => $well['city'] ?? 'Unassigned',
                 'wellType' => $well['wellType'] ?? '',
-                'waterLevel' => number_format($hasil, 2) . ' m',
+                'waterAbsorb' => number_format($hasil, 2) . ' L',
                 'waterValue' => $hasil,
                 'quality' => ($h1 === 0.0 && $h2 === 0.0) ? 'No reading' : 'Good',
                 'export' => 'CSV',
@@ -46,16 +46,6 @@ if (($currentPage ?? '') === 'historical' && is_file($databaseBootstrap)) {
     } catch (Throwable) {
         $measurementRecords = [];
     }
-}
-
-if ($measurementRecords === []) {
-    $measurementRecords = [
-    ['date' => '14 Jul', 'wellId' => 'RCH-082', 'village' => 'Ubud', 'waterLevel' => '2.31 m', 'quality' => 'Good', 'export' => 'CSV'],
-    ['date' => '14 Jul', 'wellId' => 'RW-07', 'village' => 'Tabanan', 'waterLevel' => '1.82 m', 'quality' => 'Good', 'export' => 'Excel'],
-    ['date' => '14 Jul', 'wellId' => 'RW-12', 'village' => 'Denpasar', 'waterLevel' => '3.05 m', 'quality' => 'Review', 'export' => 'CSV'],
-    ['date' => '13 Jul', 'wellId' => 'RW-18', 'village' => 'Gianyar', 'waterLevel' => '2.10 m', 'quality' => 'Good', 'export' => 'Excel'],
-    ['date' => '13 Jul', 'wellId' => 'RW-23', 'village' => 'Badung', 'waterLevel' => '1.67 m', 'quality' => 'Good', 'export' => 'CSV'],
-    ];
 }
 
 $alerts = [
