@@ -51,6 +51,8 @@ function idepDistrictDisplayName(string $name): string
 function idepProgrammeMetrics(?PDO $pdo = null): array
 {
     $pdo ??= idepDatabase();
+    $baliNow = new DateTimeImmutable('now', new DateTimeZone('Asia/Makassar'));
+    $baliDate = $baliNow->format('Y-m-d');
 
     $summary = $pdo->query(
         'SELECT
@@ -79,6 +81,26 @@ function idepProgrammeMetrics(?PDO $pdo = null): array
         ), 0)
         FROM sensor_readings'
     )->fetchColumn();
+
+    $dailyAverageStatement = $pdo->prepare(
+        'SELECT AVG(
+            CASE
+                WHEN COALESCE(h1, 0) = 0 AND COALESCE(h2, 0) = 0 THEN 0
+                WHEN COALESCE(hasil, 0) > 0 THEN hasil
+                ELSE 0
+            END
+         )
+         FROM sensor_readings
+         WHERE received_at >= :day_start AND received_at <= :day_end'
+    );
+    $dailyAverageStatement->execute([
+        ':day_start' => $baliDate . ' 00:00:00',
+        ':day_end' => $baliDate . ' 23:59:59',
+    ]);
+    $dailyAverageValue = $dailyAverageStatement->fetchColumn();
+    $dailyAverageAbsorb = $dailyAverageValue === false || $dailyAverageValue === null
+        ? null
+        : max(0, (float)$dailyAverageValue);
 
     $districtStatement = $pdo->query(
         'SELECT dc.name, COUNT(*) AS well_count
@@ -138,6 +160,11 @@ function idepProgrammeMetrics(?PDO $pdo = null): array
         'actualLitres' => round($actualLitres, 2),
         'actualLitresLabel' => idepLitresDisplayLabel($actualLitres),
         'actualLitresExactLabel' => number_format($actualLitres, 2, '.', ',') . ' L',
+        'dailyAverageAbsorb' => $dailyAverageAbsorb !== null ? round($dailyAverageAbsorb, 2) : null,
+        'dailyAverageAbsorbLabel' => $dailyAverageAbsorb !== null
+            ? number_format($dailyAverageAbsorb, 2, '.', ',') . ' L'
+            : '—',
+        'dailyAverageDate' => $baliDate,
         'peopleSupported' => $peopleSupported,
         'peopleSupportedLabel' => '~' . idepCompactNumber($peopleSupported, 0),
         'familiesSupported' => $familiesSupported,
@@ -145,7 +172,6 @@ function idepProgrammeMetrics(?PDO $pdo = null): array
         'topDistricts' => $topDistricts,
         'topSensors' => $topSensors,
         'calculation' => 'Actual sum of valid sensor hasil readings.',
-        'updatedAt' => (new DateTimeImmutable('now', new DateTimeZone('Asia/Makassar')))
-            ->format(DateTimeInterface::ATOM),
+        'updatedAt' => $baliNow->format(DateTimeInterface::ATOM),
     ];
 }

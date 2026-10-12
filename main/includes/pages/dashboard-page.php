@@ -29,7 +29,7 @@ $mapMode = 'compact';
   </article>
   <article class="stat-card">
     <span class="stat-icon" aria-hidden="true">≈</span>
-    <div><span>Avg. Water Level</span><strong>2.45 m</strong><small>Below ground level</small></div>
+    <div><span>Avg. Water Absorb</span><strong data-programme-metric="daily-average-absorb"><?= htmlspecialchars((string)$programmeMetrics['dailyAverageAbsorbLabel']) ?></strong><small>Average of today's readings · WITA</small></div>
   </article>
 </section>
 
