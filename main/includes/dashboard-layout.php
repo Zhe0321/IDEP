@@ -68,6 +68,7 @@ try {
         'villageCount' => count(array_unique(array_column($wells, 'city'))),
         'districtCount' => 0,
         'actualLitresLabel' => '—',
+        'actualLitresExactLabel' => '—',
         'peopleSupportedLabel' => '—',
         'familiesSupportedLabel' => '—',
         'topDistricts' => [],
