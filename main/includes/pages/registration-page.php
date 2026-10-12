@@ -51,8 +51,12 @@ sort($cities);
     </label>
     <label><span>Depth (metres)</span><input name="depth" inputmode="decimal"></label>
     <label><span>Absorbance Capacity</span><input name="absorption" placeholder="e.g. 2 m3/hr"></label>
-    <label><span>Installation Date</span><input name="date" type="date" required></label>
-    <label><span>Longitude</span><input name="longitude" inputmode="decimal"></label>
+    <label class="hardware-form-grid__wide"><span>Installation Date</span><input name="date" type="date" required></label>
+
+    <div class="hardware-form-grid__coordinates">
+      <label><span>Longitude</span><input name="longitude" inputmode="decimal"></label>
+      <label><span>Latitude</span><input name="latitude" inputmode="decimal"></label>
+    </div>
 
     <label><span>Province</span>
       <select name="province_id" id="province_id" required <?= $registrationDatabaseError !== null ? 'disabled' : '' ?>>
@@ -81,7 +85,6 @@ sort($cities);
       </select>
     </label>
 
-    <label><span>Latitude</span><input name="latitude" inputmode="decimal"></label>
     <label class="hardware-form-grid__wide"><span>Address</span><input name="address"></label>
   </div>
   <div class="hardware-form-actions"><span data-hardware-message hidden></span><button type="submit" data-hardware-submit>Add device</button></div>
