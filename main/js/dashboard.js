@@ -34,6 +34,7 @@ function renderProgrammeMetrics(metrics) {
     "village-count": metrics.villageCount,
     "district-count": metrics.districtCount,
     "actual-litres": metrics.actualLitresLabel,
+    "daily-average-absorb": metrics.dailyAverageAbsorbLabel,
     "people-supported": metrics.peopleSupportedLabel,
     "families-supported": metrics.familiesSupportedLabel,
   };
