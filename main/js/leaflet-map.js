@@ -25,16 +25,23 @@
   }).addTo(map);
 
   function markerIcon(status, deviceId = null, locationPending = false) {
+    const isLive = Boolean(deviceId) && status === "online";
     const dotClasses = [
       "leaflet-well-dot",
       `leaflet-well-dot--${status}`,
-      deviceId ? "leaflet-well-dot--live" : "",
+      isLive ? "leaflet-well-dot--live" : "",
       locationPending ? "leaflet-well-dot--pending" : "",
     ].filter(Boolean).join(" ");
 
     const labels = [];
     if (deviceId) {
-      labels.push(`<span class="leaflet-live-device__label">${escapeHtml(deviceId)} · LIVE</span>`);
+      const connectionLabel = isLive
+        ? "LIVE"
+        : status === "offline" ? "OFFLINE" : "NO SIGNAL";
+      const connectionClass = isLive
+        ? ""
+        : ` leaflet-live-device__label--${status}`;
+      labels.push(`<span class="leaflet-live-device__label${connectionClass}">${escapeHtml(deviceId)} · ${connectionLabel}</span>`);
     }
     if (locationPending) {
       labels.push(`<span class="leaflet-live-device__label leaflet-live-device__label--pending">⚠ Location Pending</span>`);
@@ -58,6 +65,7 @@
   }
 
   function popupHtml(well) {
+    const isLive = Boolean(well.deviceId) && well.status === "online";
     const photo = well.photo
       ? `<img class="well-popup__photo" src="${well.photo}" alt="Recharge well photo for ${well.id}">`
       : "";
@@ -68,9 +76,9 @@
 
     const identity = well.deviceId
       ? `
-          <div class="well-popup__live-badge"><i></i>Live sensor</div>
+          <div class="well-popup__live-badge${isLive ? "" : ` well-popup__live-badge--${well.status}`}"><i></i>${isLive ? "Live sensor" : well.status === "offline" ? "Offline sensor" : "No signal"}</div>
           <h4 class="well-popup__device-name">${escapeHtml(well.deviceId)}</h4>
-          <p class="well-popup__city">Connected to ${escapeHtml(well.id)} · ${escapeHtml(well.name)}, ${escapeHtml(well.city)}</p>
+          <p class="well-popup__city">${isLive ? "Connected to" : "Assigned to"} ${escapeHtml(well.id)} · ${escapeHtml(well.name)}, ${escapeHtml(well.city)}</p>
         `
       : `
           <h4>${well.id} · ${well.name ?? ""}</h4>
@@ -97,7 +105,7 @@
         <dl>
           <dt>Status</dt><dd><i class="status-dot status-dot--${well.status}"></i>${well.statusLabel ?? "—"}</dd>
           ${measurementRows}
-          <dt>${well.deviceId ? "Last live update" : "Last transmission"}</dt><dd>${well.lastTransmission ?? "—"}</dd>
+          <dt>${isLive ? "Last live update" : "Last transmission"}</dt><dd>${well.lastTransmission ?? "—"}</dd>
         </dl>
         <div class="well-popup__key">
           <span><i class="status-dot status-dot--online"></i>Online</span>
