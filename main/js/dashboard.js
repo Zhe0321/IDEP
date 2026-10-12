@@ -865,6 +865,31 @@ subDistrictSelect?.addEventListener("change", async () => {
   }
 });
 
+document.addEventListener("idep:locations-changed", async () => {
+  if (!(provinceSelect instanceof HTMLSelectElement)) {
+    return;
+  }
+
+  const selectedProvince = provinceSelect.value;
+  try {
+    const result = await requestJson("/main/api/locations.php?level=province", {
+      headers: { "X-Requested-With": "fetch" },
+    });
+    populateLocationSelect(provinceSelect, result.items ?? [], "Select province", selectedProvince);
+    resetLocationSelect(districtSelect, "Select province first");
+    resetLocationSelect(subDistrictSelect, "Select district first");
+    resetLocationSelect(villageSelect, "Select sub-district first");
+    if (provinceSelect.value) {
+      await loadDistricts(provinceSelect.value);
+    }
+  } catch (error) {
+    if (hardwareMessage) {
+      hardwareMessage.textContent = error.message;
+      hardwareMessage.hidden = false;
+    }
+  }
+});
+
 async function startHardwareEdit(row) {
   if (!(row instanceof HTMLTableRowElement)) {
     return;

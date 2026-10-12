@@ -67,6 +67,7 @@ For an existing local database, run these commands once after pulling the Site R
 ```bash
 php database/add_missing_columns.php
 php database/add_photo_column.php
+php database/add_location_types.php
 php database/import_bali_wilayah.php
 php database/migrate_user_roles.php
 ```
