@@ -36,7 +36,7 @@ $mapClass = $mapMode === 'compact' ? ' map-stage--compact' : '';
     <img data-popover-photo src="<?= htmlspecialchars($wellPhoto) ?>" alt="Recharge well placeholder">
     <div>
       <span class="map-popover__eyebrow" data-popover-name>Recharge Well</span>
-      <h3><span data-popover-id>RW-01</span> · <span data-popover-city>Ubud</span></h3>
+      <h3><span data-popover-id>RCH-082</span> · <span data-popover-city>Ubud</span></h3>
       <dl>
         <div><dt>Status</dt><dd data-popover-status>Online</dd></div>
         <div><dt>Volume</dt><dd data-popover-volume>20,933 L</dd></div>
