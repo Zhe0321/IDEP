@@ -136,7 +136,7 @@ sort($cities);
         </tbody>
       </table>
     </div>
-    <footer class="hardware-list-footer"><span>Rows per page <select><option>10</option></select></span><span data-hardware-count>Showing <?= count($hardwareRecords ?? []) ?> entries</span><div><button type="button">←</button><button type="button">→</button></div></footer>
+    <footer class="hardware-list-footer"><span>Rows per page <select data-hardware-page-size><option>10</option><option>25</option><option>50</option><option>100</option></select></span><span data-hardware-count>Showing <?= count($hardwareRecords ?? []) ?> entries</span><div><button type="button" data-hardware-prev>←</button><button type="button" data-hardware-next>→</button></div></footer>
   </article>
 </section>
 
