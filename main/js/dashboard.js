@@ -862,14 +862,21 @@ closeHardwareButton?.addEventListener("click", () => {
   setHardwareFormOpen(false);
 });
 
-function updateHardwareCount() {
-  const rows = Array.from(hardwareTable?.querySelectorAll("[data-hardware-row]") ?? []);
-  const count = rows.length;
-  const visibleCount = rows.filter((row) => !row.hidden).length;
+let hardwarePage = 1;
+
+function hardwarePageSize() {
+  const select = document.querySelector("[data-hardware-page-size]");
+  return select instanceof HTMLSelectElement ? Number(select.value) || 10 : 10;
+}
+
+function updateHardwareCount(matchCount, total, start, end) {
   const counter = document.querySelector("[data-hardware-count]");
-  if (counter) {
-    counter.textContent = count === 0 ? "No entries" : `Showing ${visibleCount} of ${count} entries`;
-  }
+  if (!counter) return;
+  counter.textContent = total === 0
+    ? "No entries"
+    : matchCount === 0
+      ? `Showing 0 of ${total} entries`
+      : `Showing ${start}–${end} of ${matchCount}${matchCount !== total ? ` (filtered from ${total})` : ""} entries`;
 }
 
 function setHardwareFormValue(name, value) {
@@ -1061,16 +1068,29 @@ function applyHardwareFilters() {
   const endDate = valueFor("end-date");
   const query = searchInput?.value.trim().toLowerCase() ?? "";
 
-  Array.from(hardwareTable.querySelectorAll("[data-hardware-row]")).forEach((row) => {
-    const searchable = `${row.dataset.name} ${row.dataset.city} ${row.dataset.mac} ${row.dataset.installer}`.toLowerCase();
-    const matches = (!city || row.dataset.city === city)
+  const rows = Array.from(hardwareTable.querySelectorAll("[data-hardware-row]"));
+  const matching = rows.filter((row) => {
+    const searchable = `${row.dataset.name} ${row.dataset.city} ${row.dataset.mac} ${row.dataset.sensorId} ${row.dataset.installer}`.toLowerCase();
+    return (!city || row.dataset.city === city)
       && (!name || row.dataset.name === name)
       && (!startDate || !row.dataset.date || row.dataset.date >= startDate)
       && (!endDate || !row.dataset.date || row.dataset.date <= endDate)
       && (!query || searchable.includes(query));
-    row.hidden = !matches;
   });
-  updateHardwareCount();
+
+  const size = hardwarePageSize();
+  const pages = Math.max(1, Math.ceil(matching.length / size));
+  hardwarePage = Math.min(Math.max(hardwarePage, 1), pages);
+  const startIndex = (hardwarePage - 1) * size;
+  const pageRows = new Set(matching.slice(startIndex, startIndex + size));
+
+  rows.forEach((row) => {
+    row.hidden = !pageRows.has(row);
+  });
+
+  updateHardwareCount(matching.length, rows.length, startIndex + 1, startIndex + pageRows.size);
+  document.querySelector("[data-hardware-prev]")?.toggleAttribute("disabled", hardwarePage <= 1);
+  document.querySelector("[data-hardware-next]")?.toggleAttribute("disabled", hardwarePage >= pages);
 }
 
 if (hardwareTable instanceof HTMLTableSectionElement) {
@@ -1079,9 +1099,12 @@ if (hardwareTable instanceof HTMLTableSectionElement) {
 }
 
 document.querySelectorAll("[data-hardware-filter]").forEach((field) => {
-  field.addEventListener("change", applyHardwareFilters);
+  field.addEventListener("change", () => { hardwarePage = 1; applyHardwareFilters(); });
 });
-searchInput?.addEventListener("input", applyHardwareFilters);
+searchInput?.addEventListener("input", () => { hardwarePage = 1; applyHardwareFilters(); });
+document.querySelector("[data-hardware-page-size]")?.addEventListener("change", () => { hardwarePage = 1; applyHardwareFilters(); });
+document.querySelector("[data-hardware-prev]")?.addEventListener("click", () => { hardwarePage--; applyHardwareFilters(); });
+document.querySelector("[data-hardware-next]")?.addEventListener("click", () => { hardwarePage++; applyHardwareFilters(); });
 
 hardwareForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
