@@ -25,3 +25,9 @@ $sql = file_get_contents($schemaPath);
 $pdo->exec($sql);
 
 echo "Database built successfully at {$dbPath}\n";
+
+// Populate the Bali location hierarchy, the 81 workbook wells, and the
+// additional IDEP Ubud monitoring site connected to device_1.
+require __DIR__ . '/import_bali_wilayah.php';
+require __DIR__ . '/import_recharge_wells.php';
+require __DIR__ . '/register_idep_device.php';

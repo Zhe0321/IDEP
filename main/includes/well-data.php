@@ -5,33 +5,6 @@ $wellPhoto = '/images/wells/recharge-well-placeholder.png';
 
 $wells = [
     [
-        'id' => 'RW-01',
-        'deviceId' => 'device_1',
-        'name' => 'Ubud Area 1',
-        'city' => 'Ubud',
-        'lat' => -8.5069,
-        'lng' => 115.2625,
-        'status' => 'online',
-        'statusLabel' => 'Online',
-        'startDate' => '23 April 2026',
-        'startDateISO' => '2026-04-23',
-        'endDate' => '26 July 2026',
-        'endDateISO' => '2026-07-26',
-        'duration' => '1 Month',
-        'absorption' => '5 ml',
-        'transmission' => 'Strong',
-        'lastTransmission' => '10 min ago',
-        'wellType' => '4',
-        'litresMinute' => '2 m³/min',
-        'litresHour' => '8 litres per hour',
-        'volume' => '20,933 L',
-        'inflow' => '4.0 m³/hr',
-        'x' => 52,
-        'y' => 61,
-        'photo' => $wellPhoto,
-        'locationPending' => true,
-    ],
-    [
         'id' => 'RCH-001',
         'name' => 'Paglipuran village',
         'city' => 'Bangli',
@@ -808,7 +781,7 @@ $wells = [
     ],
     [
         'id' => 'RCH-032',
-        'name' => 'Farmer\'s garden (I Wayan Sujana 2)',
+        'name' => 'Farmer\'s garden (I Wayan Sujana)',
         'city' => 'Tabanan',
         'lat' => -8.2875,
         'lng' => 115.153889,
@@ -2064,7 +2037,10 @@ $wells = [
     ],
 ];
 
-// Merge in wells registered via the admin Site Registration form
+// Merge in wells registered via the admin Site Registration form.
+// Import tooling can opt out so its normalized source is not overwritten by
+// an older copy of the same records already stored in the database.
+if (!($skipDatabaseWellMerge ?? false)) {
 require_once __DIR__ . '/../../database/db.php';
 
 try {
@@ -2076,15 +2052,51 @@ try {
             w.latitude,
             w.longitude,
             w.well_depth,
+            w.well_type,
+            w.absorption_capacity,
+            w.address,
+            w.photo_path,
             w.installer_name,
             w.installation_date,
+            COALESCE(v.name, '—') AS village_name,
             COALESCE(dc.name, '—') AS city_name,
-            s.id_device AS sensor_device_id
+            s.id_device AS sensor_device_id,
+            latest.h1 AS latest_h1,
+            latest.h2 AS latest_h2,
+            latest.hasil AS latest_hasil,
+            latest.received_at AS latest_received_at,
+            reading_span.first_received_at,
+            reading_span.last_received_at,
+            reading_span.reading_count,
+            reading_span.total_absorption
         FROM wells w
         LEFT JOIN village v ON v.id = w.village_id
         LEFT JOIN sub_district sd ON sd.id = v.sub_district_id
         LEFT JOIN district_city dc ON dc.id = sd.district_id
         LEFT JOIN sensors s ON s.id = w.sensor_id
+        LEFT JOIN sensor_readings latest ON latest.id = (
+            SELECT sr.id
+            FROM sensor_readings sr
+            WHERE sr.sensor_id = s.id
+            ORDER BY sr.received_at DESC, sr.id DESC
+            LIMIT 1
+        )
+        LEFT JOIN (
+            SELECT
+                sensor_id,
+                MIN(received_at) AS first_received_at,
+                MAX(received_at) AS last_received_at,
+                COUNT(*) AS reading_count,
+                SUM(
+                    CASE
+                        WHEN COALESCE(h1, 0) = 0 AND COALESCE(h2, 0) = 0 THEN 0
+                        WHEN COALESCE(hasil, 0) > 0 THEN hasil
+                        ELSE 0
+                    END
+                ) AS total_absorption
+            FROM sensor_readings
+            GROUP BY sensor_id
+        ) reading_span ON reading_span.sensor_id = s.id
         ORDER BY w.id DESC
     ")->fetchAll();
 } catch (Throwable $e) {
@@ -2093,38 +2105,92 @@ try {
 }
 
 foreach ($dbWells as $row) {
-    $installDateIso = $row['installation_date'] ?: null;
+    $firstReadingAt = $row['first_received_at'] ?: null;
+    $lastReadingAt = $row['last_received_at'] ?: null;
+    $firstReadingDateIso = $firstReadingAt !== null ? substr((string)$firstReadingAt, 0, 10) : null;
+    $lastReadingDateIso = $lastReadingAt !== null ? substr((string)$lastReadingAt, 0, 10) : null;
+    $readingCount = (int)($row['reading_count'] ?? 0);
+    $totalAbsorption = max(0, (float)($row['total_absorption'] ?? 0));
+    $totalAbsorptionLabel = $readingCount > 0
+        ? number_format($totalAbsorption, 2, '.', ',') . ' L'
+        : '—';
+    $installDateIso = $row['installation_date'] ?: $firstReadingDateIso;
     $installDateDisplay = $installDateIso
         ? date('d F Y', strtotime($installDateIso))
         : '—';
 
     $hasCoords = $row['latitude'] !== null && $row['longitude'] !== null;
+    $cityName = preg_replace('/^(KAB\.|KOTA)\s+/i', '', (string)$row['city_name']) ?? (string)$row['city_name'];
+    $cityName = ucwords(strtolower($cityName));
+    if ($row['well_code'] === 'RCH-082') {
+        $cityName = ucwords(strtolower((string)$row['village_name']));
+    }
+    $absorption = trim((string)($row['absorption_capacity'] ?? ''));
+    $litresMinute = '—';
+    $litresHour = '—';
+    if (preg_match('/\d+(?:[.,]\d+)?/', $absorption, $capacityMatch) === 1) {
+        $cubicMetresPerHour = (float)str_replace(',', '.', $capacityMatch[0]);
+        $litresMinute = number_format($cubicMetresPerHour * 1000 / 60, 1) . ' L/min';
+        $litresHour = number_format($cubicMetresPerHour * 1000, 0) . ' L/hour';
+    }
 
-    $wells[] = [
+    $sensorDeviceId = $row['sensor_device_id'] ?: null;
+    $latestReceivedAt = $row['latest_received_at'] ?: null;
+    $sensorStatus = 'no-signal';
+    $sensorStatusLabel = 'No Signal';
+    if ($sensorDeviceId !== null && $latestReceivedAt !== null) {
+        $receivedAt = DateTimeImmutable::createFromFormat(
+            'Y-m-d H:i:s',
+            $latestReceivedAt,
+            new DateTimeZone('Asia/Makassar')
+        );
+        $now = new DateTimeImmutable('now', new DateTimeZone('Asia/Makassar'));
+        if ($receivedAt !== false && ($now->getTimestamp() - $receivedAt->getTimestamp()) <= 180) {
+            $sensorStatus = 'online';
+            $sensorStatusLabel = 'Online';
+        }
+    }
+
+    $databaseWell = [
         'id' => $row['well_code'],
-        'deviceId' => $row['sensor_device_id'],
+        'deviceId' => $sensorDeviceId,
         'name' => $row['well_name'],
-        'city' => $row['city_name'],
+        'city' => $cityName,
         'lat' => $hasCoords ? (float)$row['latitude'] : null,
         'lng' => $hasCoords ? (float)$row['longitude'] : null,
-        'status' => 'no-signal',
-        'statusLabel' => 'No Signal',
+        'status' => $sensorStatus,
+        'statusLabel' => $sensorStatusLabel,
         'startDate' => $installDateDisplay,
         'startDateISO' => $installDateIso,
+        'readingStartISO' => $firstReadingDateIso,
+        'readingEndISO' => $lastReadingDateIso,
+        'totalAbsorptionValue' => round($totalAbsorption, 2),
+        'totalAbsorptionLabel' => $totalAbsorptionLabel,
         'endDate' => '—',
         'endDateISO' => null,
         'duration' => 'Ongoing',
-        'absorption' => '—',
-        'transmission' => 'No Signal',
-        'lastTransmission' => '—',
-        'wellType' => 'Registered Well',
-        'litresMinute' => '—',
-        'litresHour' => '—',
+        'absorption' => $absorption !== '' ? $absorption : '—',
+        'transmission' => $sensorStatus === 'online' ? 'Live' : 'No Signal',
+        'lastTransmission' => $latestReceivedAt !== null ? $latestReceivedAt . ' WITA' : '—',
+        'wellType' => $row['well_type'] ?: 'Registered Well',
+        'litresMinute' => $litresMinute,
+        'litresHour' => $litresHour,
         'volume' => '—',
-        'inflow' => '—',
+        'inflow' => $absorption !== '' ? $absorption : '—',
         'depth' => $row['well_depth'] !== null ? $row['well_depth'] . ' meters' : '—',
-        'address' => $row['city_name'],
-        'photo' => $wellPhoto,
+        'address' => $row['address'] ?: $cityName,
+        'photo' => $row['photo_path'] ?: $wellPhoto,
         'locationPending' => !$hasCoords,
+        'h1' => $row['latest_h1'] ?? '—',
+        'h2' => $row['latest_h2'] ?? '—',
+        'hasil' => $row['latest_hasil'] ?? '—',
     ];
+
+    $existingIndex = array_search($row['well_code'], array_column($wells, 'id'), true);
+    if ($existingIndex !== false) {
+        $wells[$existingIndex] = $databaseWell;
+    } else {
+        $wells[] = $databaseWell;
+    }
+}
 }

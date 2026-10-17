@@ -52,8 +52,7 @@ Share the generated `https://...trycloudflare.com` link. The link stops working 
 ## Current data behaviour
 
 - Dashboard and Historical Data read sensor measurements from `database/idep_groundwater.db`.
-- The shared SQLite database is stored in Git at `database/idep_groundwater.db`, so a
-  fresh clone contains the same accounts, sensors, and saved readings.
+- The SQLite database is local to each computer and is not stored in Git.
 - Site Registration reads and writes sensors, wells, and the Bali location hierarchy in `database/idep_groundwater.db`.
 - Newly registered wells with coordinates are included in the dashboard and map data.
 - Generated reports and settings persist in the current browser.
@@ -68,11 +67,11 @@ For an existing local database, run these commands once after pulling the Site R
 ```bash
 php database/add_missing_columns.php
 php database/add_photo_column.php
+php database/add_location_types.php
 php database/import_bali_wilayah.php
 php database/migrate_user_roles.php
 ```
 
-The migration and import commands are safe to run again. The SQLite database is
-tracked in Git, so local database changes appear in `git status` and must be committed
-and pushed before teammates can download them. Git distributes database snapshots;
-it does not synchronise live sensor readings between running computers.
+The migration and import commands are safe to run again. SQLite database files are
+ignored by Git, so each computer keeps its own accounts and sensor history. Git does
+not synchronise live sensor readings between running computers.

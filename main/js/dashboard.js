@@ -8,6 +8,73 @@ const liveSensor = document.querySelector("[data-live-sensor]");
 const liveOnlineSensors = document.querySelector("[data-live-online-sensors]");
 const liveSensorStatus = document.querySelector("[data-live-sensor-status]");
 
+const programmeMetricElements = document.querySelectorAll("[data-programme-metric]");
+
+function renderProgrammeRows(selector, districts, valueKey, suffix = "", titleKey = "") {
+  document.querySelectorAll(selector).forEach((container) => {
+    const rows = districts.map((district) => {
+      const row = document.createElement("p");
+      const name = document.createElement("span");
+      const value = document.createElement("span");
+      name.textContent = district.name;
+      value.textContent = `${district[valueKey]}${suffix}`;
+      if (titleKey && district[titleKey]) {
+        value.title = district[titleKey];
+      }
+      row.append(name, value);
+      return row;
+    });
+    container.replaceChildren(...rows);
+  });
+}
+
+function renderProgrammeMetrics(metrics) {
+  const values = {
+    "well-count": metrics.wellCount,
+    "village-count": metrics.villageCount,
+    "district-count": metrics.districtCount,
+    "actual-litres": metrics.actualLitresLabel,
+    "daily-average-absorb": metrics.dailyAverageAbsorbLabel,
+    "people-supported": metrics.peopleSupportedLabel,
+    "families-supported": metrics.familiesSupportedLabel,
+  };
+
+  Object.entries(values).forEach(([name, value]) => {
+    document.querySelectorAll(`[data-programme-metric="${name}"]`).forEach((element) => {
+      element.textContent = String(value ?? "—");
+      if (name === "actual-litres") {
+        element.title = metrics.actualLitresExactLabel ?? "";
+      }
+    });
+  });
+
+  const districts = Array.isArray(metrics.topDistricts) ? metrics.topDistricts : [];
+  const sensors = Array.isArray(metrics.topSensors) ? metrics.topSensors : [];
+  renderProgrammeRows("[data-programme-top-wells]", districts, "wellCount");
+  renderProgrammeRows("[data-programme-top-litres]", sensors, "litresLabel", "", "litresExactLabel");
+}
+
+async function refreshProgrammeMetrics() {
+  try {
+    const response = await fetch("/main/api/programme-metrics.php", {
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    });
+    const payload = await response.json();
+    if (!response.ok || !payload.success || !payload.data) {
+      throw new Error(payload.message ?? "Programme statistics unavailable");
+    }
+    renderProgrammeMetrics(payload.data);
+  } catch {
+    // Keep the server-rendered figures if a background refresh fails.
+  }
+}
+
+if (programmeMetricElements.length > 0) {
+  refreshProgrammeMetrics();
+  window.setInterval(refreshProgrammeMetrics, 15_000);
+}
+
 function setLiveSensorText(selector, value) {
   const element = document.querySelector(selector);
   if (element) {
@@ -117,24 +184,13 @@ function wellMatches(well, searchableText = "") {
   const city = activeFilter("city");
   const id = activeFilter("id");
   const status = activeFilter("status");
-  const startDate = activeFilter("start-date");
-  const endDate = activeFilter("end-date");
   const searchHaystack = `${well.id ?? ""} ${well.name ?? ""} ${well.city ?? ""} ${well.statusLabel ?? ""} ${searchableText}`.toLowerCase();
-
-  // The well's monitoring window (startDateISO –> endDateISO) overlaps the requested range as long as 
-  // it doesn't end before the range starts, or start after the range ends.
-  const wellStart = well.startDateISO ?? "";
-  const wellEnd = well.endDateISO ?? "";
-  const withinStart = !startDate || !wellEnd || wellEnd >= startDate;
-  const withinEnd = !endDate || !wellStart || wellStart <= endDate;
 
   return (
     (!query || searchHaystack.includes(query)) &&
     (!city || String(well.city ?? "").toLowerCase() === city) &&
     (!id || String(well.id ?? "").toLowerCase() === id) &&
-    (!status || well.status === status) &&
-    withinStart &&
-    withinEnd
+    (!status || well.status === status)
   );
 }
 
@@ -158,6 +214,46 @@ function updateWellsStats(visibleWells) {
       field.textContent = String(value);
     }
   });
+}
+
+let absorptionRequestId = 0;
+
+async function refreshWellAbsorption() {
+  if (wellRows.length === 0) {
+    return;
+  }
+
+  const requestId = ++absorptionRequestId;
+  const parameters = new URLSearchParams();
+  const startDate = activeFilter("start-date");
+  const endDate = activeFilter("end-date");
+  if (startDate) parameters.set("start", startDate);
+  if (endDate) parameters.set("end", endDate);
+
+  try {
+    const response = await fetch(`/main/api/well-absorption.php?${parameters.toString()}`, {
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    });
+    const payload = await response.json();
+    if (!response.ok || !payload.success || !payload.data) {
+      throw new Error(payload.message ?? "Water absorption unavailable");
+    }
+    if (requestId !== absorptionRequestId) {
+      return;
+    }
+
+    wellRows.forEach((row) => {
+      const well = readWell(row);
+      const result = payload.data[well.id];
+      const cell = row.querySelector("[data-well-absorption]");
+      if (!cell) return;
+      cell.textContent = result?.label ?? "—";
+      cell.title = result?.exactLabel ?? "—";
+    });
+  } catch {
+    // Keep the server-rendered all-time totals if a background refresh fails.
+  }
 }
 
 function applyFilters() {
@@ -191,6 +287,9 @@ function applyFilters() {
 
 searchInput?.addEventListener("input", applyFilters);
 filterInputs.forEach((control) => control.addEventListener("change", applyFilters));
+document.querySelectorAll('[data-filter="start-date"], [data-filter="end-date"]').forEach((control) => {
+  control.addEventListener("change", refreshWellAbsorption);
+});
 
 // Cascading Well ID filter: narrow the "Well ID" dropdown to only the wells in the selected city, and keep the City dropdown 
 // in sync if a Well ID is picked directly. Runs on any page that has both filters (wells + map).
@@ -349,16 +448,18 @@ document.querySelectorAll(".measurement-row[data-well]").forEach((row) => {
 });
 
 applyFilters();
+refreshWellAbsorption();
 
 document.querySelector("[data-export-wells]")?.addEventListener("click", () => {
-  const header = ["Well ID", "City", "Start Date", "End Date", "Duration", "Total Water Absorption", "Transmission", "Status"];
+  const header = ["Well ID", "City", "Total Water Absorption", "Transmission", "Status"];
   const csvRows = [header.join(",")];
 
   wellRows
     .filter((row) => !row.hidden)
     .forEach((row) => {
       const well = readWell(row);
-      const values = [well.id, well.city, well.startDate, well.endDate, well.duration, well.absorption, well.transmission, well.statusLabel];
+      const absorption = row.querySelector("[data-well-absorption]")?.textContent.trim() ?? "—";
+      const values = [well.id, well.city, absorption, well.transmission, well.statusLabel];
       csvRows.push(values.map((value) => `"${String(value ?? "").replace(/"/g, '""')}"`).join(","));
     });
 
@@ -525,7 +626,7 @@ function exportRecord(button) {
 
 document.querySelector("[data-export-measurements]")?.addEventListener("click", () => {
   const rows = Array.from(document.querySelectorAll("[data-history-row]")).filter((row) => !row.hidden);
-  const csvRows = ["Date,Well ID,Village,Water Level,Data Quality"];
+  const csvRows = ["Date,Well ID,Village,Water Absorb,Data Quality"];
   rows.forEach((row) => {
     const cells = Array.from(row.querySelectorAll("td")).slice(0, 5).map((cell) => `"${cell.textContent.trim()}"`);
     csvRows.push(cells.join(","));
@@ -865,6 +966,31 @@ subDistrictSelect?.addEventListener("change", async () => {
   }
 });
 
+document.addEventListener("idep:locations-changed", async () => {
+  if (!(provinceSelect instanceof HTMLSelectElement)) {
+    return;
+  }
+
+  const selectedProvince = provinceSelect.value;
+  try {
+    const result = await requestJson("/main/api/locations.php?level=province", {
+      headers: { "X-Requested-With": "fetch" },
+    });
+    populateLocationSelect(provinceSelect, result.items ?? [], "Select province", selectedProvince);
+    resetLocationSelect(districtSelect, "Select province first");
+    resetLocationSelect(subDistrictSelect, "Select district first");
+    resetLocationSelect(villageSelect, "Select sub-district first");
+    if (provinceSelect.value) {
+      await loadDistricts(provinceSelect.value);
+    }
+  } catch (error) {
+    if (hardwareMessage) {
+      hardwareMessage.textContent = error.message;
+      hardwareMessage.hidden = false;
+    }
+  }
+});
+
 async function startHardwareEdit(row) {
   if (!(row instanceof HTMLTableRowElement)) {
     return;
@@ -877,6 +1003,9 @@ async function startHardwareEdit(row) {
   setHardwareFormValue("sensor_id", row.dataset.sensorId);
   setHardwareFormValue("installer", row.dataset.installer);
   setHardwareFormValue("type", row.dataset.type);
+  setHardwareFormValue("depth", row.dataset.depth);
+  setHardwareFormValue("absorption", row.dataset.absorption);
+  setHardwareFormValue("address", row.dataset.address);
   setHardwareFormValue("date", row.dataset.date);
   setHardwareFormValue("longitude", row.dataset.longitude);
   setHardwareFormValue("latitude", row.dataset.latitude);

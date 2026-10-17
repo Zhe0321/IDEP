@@ -37,7 +37,7 @@ if (($currentPage ?? '') === 'historical' && is_file($databaseBootstrap)) {
                 'wellId' => $well['id'] ?? (string) $reading['id_device'],
                 'village' => $well['city'] ?? 'Unassigned',
                 'wellType' => $well['wellType'] ?? '',
-                'waterLevel' => number_format($hasil, 2) . ' m',
+                'waterAbsorb' => number_format($hasil, 2) . ' L',
                 'waterValue' => $hasil,
                 'quality' => ($h1 === 0.0 && $h2 === 0.0) ? 'No reading' : 'Good',
                 'export' => 'CSV',
@@ -46,16 +46,6 @@ if (($currentPage ?? '') === 'historical' && is_file($databaseBootstrap)) {
     } catch (Throwable) {
         $measurementRecords = [];
     }
-}
-
-if ($measurementRecords === []) {
-    $measurementRecords = [
-    ['date' => '14 Jul', 'wellId' => 'RW-01', 'village' => 'Ubud', 'waterLevel' => '2.31 m', 'quality' => 'Good', 'export' => 'CSV'],
-    ['date' => '14 Jul', 'wellId' => 'RW-07', 'village' => 'Tabanan', 'waterLevel' => '1.82 m', 'quality' => 'Good', 'export' => 'Excel'],
-    ['date' => '14 Jul', 'wellId' => 'RW-12', 'village' => 'Denpasar', 'waterLevel' => '3.05 m', 'quality' => 'Review', 'export' => 'CSV'],
-    ['date' => '13 Jul', 'wellId' => 'RW-18', 'village' => 'Gianyar', 'waterLevel' => '2.10 m', 'quality' => 'Good', 'export' => 'Excel'],
-    ['date' => '13 Jul', 'wellId' => 'RW-23', 'village' => 'Badung', 'waterLevel' => '1.67 m', 'quality' => 'Good', 'export' => 'CSV'],
-    ];
 }
 
 $alerts = [
@@ -135,6 +125,7 @@ try {
     $hardwareRecords = $pdo->query("
         SELECT
             w.id AS wellId,
+            w.well_code AS wellCode,
             w.well_name AS name,
             COALESCE(dc.name, '—') AS city,
             COALESCE(s.id_device, '—') AS mac,
@@ -150,7 +141,10 @@ try {
                 ELSE '—'
             END AS displayDate,
             COALESCE(w.installer_name, '—') AS installer,
-            COALESCE(s.sensor_type, '—') AS type,
+            COALESCE(w.well_type, s.sensor_type, '—') AS type,
+            w.well_depth AS depth,
+            COALESCE(w.absorption_capacity, '—') AS absorption,
+            COALESCE(w.address, '—') AS address,
             w.longitude,
             w.latitude
         FROM wells w
@@ -161,6 +155,11 @@ try {
         LEFT JOIN sensors s ON s.id = w.sensor_id
         ORDER BY w.id DESC
     ")->fetchAll();
+    foreach ($hardwareRecords as &$record) {
+        $city = preg_replace('/^(KAB\.|KOTA)\s+/i', '', (string)$record['city']) ?? (string)$record['city'];
+        $record['city'] = ucwords(strtolower($city));
+    }
+    unset($record);
 } catch (Throwable $e) {
     $hardwareRecords = [];
     error_log('Hardware query failed: ' . $e->getMessage());

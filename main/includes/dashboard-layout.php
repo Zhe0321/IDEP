@@ -57,6 +57,27 @@ if ($isAdmin) {
 
 require __DIR__ . '/well-data.php';
 require __DIR__ . '/operations-data.php';
+require_once __DIR__ . '/programme-metrics.php';
+
+try {
+    $programmeMetrics = idepProgrammeMetrics();
+} catch (Throwable $error) {
+    error_log('Programme metrics render failed: ' . $error->getMessage());
+    $programmeMetrics = [
+        'wellCount' => count($wells),
+        'villageCount' => count(array_unique(array_column($wells, 'city'))),
+        'districtCount' => 0,
+        'actualLitresLabel' => '—',
+        'actualLitresExactLabel' => '—',
+        'dailyAverageAbsorb' => null,
+        'dailyAverageAbsorbLabel' => '—',
+        'dailyAverageDate' => '',
+        'peopleSupportedLabel' => '—',
+        'familiesSupportedLabel' => '—',
+        'topDistricts' => [],
+        'topSensors' => [],
+    ];
+}
 
 $rolePrefix = $isAdmin ? 'admin' : 'public';
 $pageDetails = [
