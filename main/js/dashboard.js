@@ -451,7 +451,7 @@ applyFilters();
 refreshWellAbsorption();
 
 document.querySelector("[data-export-wells]")?.addEventListener("click", () => {
-  const header = ["Well ID", "City", "Start Date", "End Date", "Duration", "Total Water Absorption", "Transmission", "Status"];
+  const header = ["Well ID", "City", "Total Water Absorption", "Transmission", "Status"];
   const csvRows = [header.join(",")];
 
   wellRows
@@ -459,7 +459,7 @@ document.querySelector("[data-export-wells]")?.addEventListener("click", () => {
     .forEach((row) => {
       const well = readWell(row);
       const absorption = row.querySelector("[data-well-absorption]")?.textContent.trim() ?? "—";
-      const values = [well.id, well.city, well.startDate, well.endDate, well.duration, absorption, well.transmission, well.statusLabel];
+      const values = [well.id, well.city, absorption, well.transmission, well.statusLabel];
       csvRows.push(values.map((value) => `"${String(value ?? "").replace(/"/g, '""')}"`).join(","));
     });
 
