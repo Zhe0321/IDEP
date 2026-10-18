@@ -85,7 +85,15 @@ sort($cities);
       </select>
     </label>
 
-    <label class="hardware-form-grid__wide"><span>Address</span><input name="address"></label>
+    <label class="hardware-form-grid__wide"><span>Address</span>    <div class="hardware-form-grid__wide hardware-photo-field">
+      <label><span>Site photo (JPG, PNG or WebP, max 5 MB)</span>
+        <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" data-hardware-photo-input>
+      </label>
+      <div class="hardware-photo-preview" data-hardware-photo-preview hidden>
+        <img alt="Site photo preview" data-hardware-photo-img>
+        <label class="hardware-photo-remove"><input type="checkbox" name="remove_photo" value="1" data-hardware-photo-remove> Remove photo</label>
+      </div>
+    </div><input name="address"></label>
   </div>
   <div class="hardware-form-actions"><span data-hardware-message hidden></span><button type="submit" data-hardware-submit>Add device</button></div>
 </form>
@@ -122,9 +130,9 @@ sort($cities);
                 data-address="<?= htmlspecialchars($record['address'] ?? '') ?>"
                 data-longitude="<?= htmlspecialchars((string)($record['longitude'] ?? '')) ?>"
                 data-latitude="<?= htmlspecialchars((string)($record['latitude'] ?? '')) ?>"
+                data-photo="<?= htmlspecialchars((string)($record['photo'] ?? '')) ?>"
               >
-                <td><strong><?= htmlspecialchars($record['wellCode'] ?? '') ?></strong><br><?= htmlspecialchars($record['name'] ?? '') ?></td>
-                <td><?= htmlspecialchars($record['type'] ?? '—') ?><br><?= $record['depth'] !== null ? htmlspecialchars((string)$record['depth']) . ' m' : '—' ?></td>
+                <td><div class="hardware-site"><?php if (!empty($record['photo'])): ?><img class="hardware-thumb" src="<?= htmlspecialchars($record['photo']) ?>" alt="" loading="lazy"><?php endif; ?><span><strong><?= htmlspecialchars($record['wellCode'] ?? '') ?></strong><br><?= htmlspecialchars($record['name'] ?? '') ?></span></div></td>                <td><?= htmlspecialchars($record['type'] ?? '—') ?><br><?= $record['depth'] !== null ? htmlspecialchars((string)$record['depth']) . ' m' : '—' ?></td>
                 <td><?= htmlspecialchars($record['city'] ?? '') ?><br><small><?= htmlspecialchars($record['address'] ?? '—') ?></small></td>
                 <td><?= htmlspecialchars($record['absorption'] ?? '—') ?></td>
                 <td><?= htmlspecialchars($record['sensorDeviceId'] ?? 'No Signal') ?></td>

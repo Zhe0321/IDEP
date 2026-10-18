@@ -846,6 +846,42 @@ function setHardwareFormOpen(open) {
     closeHardwareButton.hidden = !open;
   }
 }
+const photoInput = document.querySelector("[data-hardware-photo-input]");
+const photoPreview = document.querySelector("[data-hardware-photo-preview]");
+const photoImg = document.querySelector("[data-hardware-photo-img]");
+const photoRemove = document.querySelector("[data-hardware-photo-remove]");
+
+function showHardwarePhoto(src, allowRemove) {
+  if (!photoPreview || !(photoImg instanceof HTMLImageElement)) return;
+  if (!src) {
+    photoPreview.hidden = true;
+    photoImg.removeAttribute("src");
+    return;
+  }
+  photoImg.src = src;
+  photoPreview.hidden = false;
+  if (photoRemove instanceof HTMLInputElement) {
+    photoRemove.checked = false;
+    photoRemove.parentElement.hidden = !allowRemove;
+  }
+}
+
+photoInput?.addEventListener("change", () => {
+  const file = photoInput.files?.[0];
+  if (!file) {
+    showHardwarePhoto(editingHardwareRow?.dataset.photo || "", true);
+    return;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    photoInput.value = "";
+    if (hardwareMessage) {
+      hardwareMessage.textContent = "Photo is too large (max 5 MB).";
+      hardwareMessage.hidden = false;
+    }
+    return;
+  }
+  showHardwarePhoto(URL.createObjectURL(file), false);
+});
 
 function resetHardwareEditor() {
   if (hardwareForm instanceof HTMLFormElement) {
@@ -856,6 +892,7 @@ function resetHardwareEditor() {
   resetLocationSelect(subDistrictSelect, "Select district first");
   resetLocationSelect(villageSelect, "Select sub-district first");
   editingHardwareRow = null;
+  showHardwarePhoto("", false);
   if (hardwareSubmitButton) {
     hardwareSubmitButton.disabled = false;
     hardwareSubmitButton.textContent = "Add device";
@@ -1030,6 +1067,8 @@ async function startHardwareEdit(row) {
   setHardwareFormValue("longitude", row.dataset.longitude);
   setHardwareFormValue("latitude", row.dataset.latitude);
   setHardwareFormValue("province_id", row.dataset.provinceId);
+  if (photoInput instanceof HTMLInputElement) photoInput.value = "";
+  showHardwarePhoto(row.dataset.photo || "", true);
 
   try {
     await loadDistricts(row.dataset.provinceId, row.dataset.districtId);
