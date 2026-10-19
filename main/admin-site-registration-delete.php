@@ -22,12 +22,14 @@ try {
     $pdo = idepDatabase();
     $pdo->beginTransaction();
 
-    $findStatement = $pdo->prepare('SELECT sensor_id FROM wells WHERE id = :id LIMIT 1');
+    $findStatement = $pdo->prepare('SELECT sensor_id, photo_path FROM wells WHERE id = :id LIMIT 1');
     $findStatement->execute([':id' => $wellId]);
-    $sensorId = $findStatement->fetchColumn();
-    if ($sensorId === false) {
+    $found = $findStatement->fetch(PDO::FETCH_ASSOC);
+    if ($found === false) {
         throw new InvalidArgumentException('Registered site was not found.');
     }
+    $sensorId = $found['sensor_id'];
+    $photoPath = $found['photo_path'];
 
     $deleteWell = $pdo->prepare('DELETE FROM wells WHERE id = :id');
     $deleteWell->execute([':id' => $wellId]);
@@ -42,6 +44,14 @@ try {
     }
 
     $pdo->commit();
+
+    if ($photoPath && str_starts_with($photoPath, '/uploads/wells/')) {
+        $photoFile = dirname(__DIR__) . $photoPath;
+        if (is_file($photoFile)) {
+            @unlink($photoFile);
+        }
+    }
+
     echo json_encode(['success' => true]);
 } catch (Throwable $e) {
     if (isset($pdo) && $pdo->inTransaction()) {

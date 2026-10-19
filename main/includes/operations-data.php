@@ -146,7 +146,8 @@ try {
             COALESCE(w.absorption_capacity, '—') AS absorption,
             COALESCE(w.address, '—') AS address,
             w.longitude,
-            w.latitude
+            w.latitude,
+            w.photo_path AS photo
         FROM wells w
         LEFT JOIN village v ON v.id = w.village_id
         LEFT JOIN sub_district sd ON sd.id = v.sub_district_id
