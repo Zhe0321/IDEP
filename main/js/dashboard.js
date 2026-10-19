@@ -957,7 +957,15 @@ function populateLocationSelect(select, items, placeholder, selectedValue = "") 
   select.value = String(selectedValue || "");
 }
 
+function csrfToken() {
+  return document.querySelector('meta[name="csrf-token"]')?.content ?? "";
+}
+
 async function requestJson(url, options = {}) {
+  const method = String(options.method ?? "GET").toUpperCase();
+  if (method !== "GET") {
+    options = { ...options, headers: { ...(options.headers ?? {}), "X-CSRF-Token": csrfToken() } };
+  }
   const response = await fetch(url, options);
   const result = await response.json().catch(() => ({}));
   if (!response.ok) {

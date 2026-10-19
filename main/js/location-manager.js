@@ -109,8 +109,12 @@
   async function request(options = {}) {
     const response = await fetch(options.url ?? API_URL, {
       method: options.method ?? "GET",
-      headers: options.body
-        ? { "Content-Type": "application/json", "X-Requested-With": "fetch" }
+            headers: options.body
+        ? {
+            "Content-Type": "application/json",
+            "X-Requested-With": "fetch",
+            "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]')?.content ?? "",
+          }
         : { "X-Requested-With": "fetch" },
       body: options.body ? JSON.stringify(options.body) : undefined,
       credentials: "same-origin",
