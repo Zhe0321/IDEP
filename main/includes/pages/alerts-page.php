@@ -1,13 +1,16 @@
 <?php
 declare(strict_types=1);
 
-$selectedAlert = $alerts[0];
+$selectedAlert = $alerts[0] ?? null;
 ?>
 <section class="alerts-layout">
   <article class="panel alerts-list-panel">
     <h2>Active Alerts</h2>
     <div class="alerts-list">
-      <?php foreach ($alerts as $index => $alert): ?>
+      <?php if ($alerts === []): ?>
+        <p class="alerts-empty">No active alerts. Connected sensors are transmitting normally.</p>
+      <?php else: ?>
+        <?php foreach ($alerts as $index => $alert): ?>
         <button
           class="alert-row<?= $index === 0 ? ' is-selected' : '' ?>"
           type="button"
@@ -18,19 +21,20 @@ $selectedAlert = $alerts[0];
           <span><strong><?= htmlspecialchars($alert['title']) ?></strong><small><?= htmlspecialchars($alert['wellId']) ?> · <?= htmlspecialchars($alert['village']) ?> · <?= htmlspecialchars($alert['summary']) ?></small></span>
           <em class="alert-state alert-state--<?= strtolower(htmlspecialchars($alert['state'])) ?>"><?= htmlspecialchars($alert['state']) ?></em>
         </button>
-      <?php endforeach; ?>
+        <?php endforeach; ?>
+      <?php endif; ?>
     </div>
   </article>
 
   <aside class="panel alert-detail" data-alert-detail>
     <h2>Alert Detail</h2>
     <dl>
-      <div><dt>Alert</dt><dd data-alert-field="alert"><?= htmlspecialchars($selectedAlert['alert']) ?></dd></div>
-      <div><dt>Well ID</dt><dd data-alert-field="wellId"><?= htmlspecialchars($selectedAlert['wellId']) ?></dd></div>
-      <div><dt>Village</dt><dd data-alert-field="village"><?= htmlspecialchars($selectedAlert['village']) ?></dd></div>
-      <div><dt>Signal Strength</dt><dd data-alert-field="signal"><?= htmlspecialchars($selectedAlert['signal']) ?></dd></div>
-      <div><dt>Last Transmission</dt><dd data-alert-field="lastTransmission"><?= htmlspecialchars($selectedAlert['lastTransmission']) ?></dd></div>
-      <div><dt>Suggested action</dt><dd data-alert-field="action"><?= htmlspecialchars($selectedAlert['action']) ?></dd></div>
+      <div><dt>Alert</dt><dd data-alert-field="alert"><?= htmlspecialchars((string) ($selectedAlert['alert'] ?? 'No active alerts')) ?></dd></div>
+      <div><dt>Well ID</dt><dd data-alert-field="wellId"><?= htmlspecialchars((string) ($selectedAlert['wellId'] ?? '—')) ?></dd></div>
+      <div><dt>Village</dt><dd data-alert-field="village"><?= htmlspecialchars((string) ($selectedAlert['village'] ?? '—')) ?></dd></div>
+      <div><dt>Sensor Status</dt><dd data-alert-field="signal"><?= htmlspecialchars((string) ($selectedAlert['signal'] ?? 'Online')) ?></dd></div>
+      <div><dt>Last Transmission</dt><dd data-alert-field="lastTransmission"><?= htmlspecialchars((string) ($selectedAlert['lastTransmission'] ?? '—')) ?></dd></div>
+      <div><dt>Suggested action</dt><dd data-alert-field="action"><?= htmlspecialchars((string) ($selectedAlert['action'] ?? 'No action required')) ?></dd></div>
     </dl>
   </aside>
 </section>
