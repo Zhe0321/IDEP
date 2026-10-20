@@ -25,7 +25,7 @@ $mapMode = 'compact';
   </article>
   <article class="stat-card" id="alerts">
     <span class="stat-icon" aria-hidden="true">!</span>
-    <div><span>Active Alerts</span><strong>5</strong><small>Requires field review</small></div>
+    <div><span>Active Alerts</span><strong><?= count($alerts) ?></strong><small><?= count($alerts) === 0 ? 'No field review required' : 'Requires field review' ?></small></div>
   </article>
   <article class="stat-card">
     <span class="stat-icon" aria-hidden="true">≈</span>
