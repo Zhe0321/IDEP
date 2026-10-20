@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+
+if (PHP_SAPI !== 'cli') { http_response_code(404); exit; } // command-line only
 /**
  * Run this once (or after any schema.sql change) to (re)build the database:
  *   php run_schema.php

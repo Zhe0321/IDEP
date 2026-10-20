@@ -7,9 +7,14 @@ PHP website for the Bali Water Protection project.
 Open a terminal in the project folder:
 
 ```bash
-cd /Users/nanzhe/Desktop/IDEP
-php -S 127.0.0.1:8000
+cd /path/to/IDEP
+./start-server.sh
 ```
+
+`start-server.sh` runs `php -d upload_max_filesize=6M -d post_max_size=8M -S 127.0.0.1:8000 router.php`.
+Always start the built-in server with `router.php`: without it, PHP publishes every file in the
+folder, including the SQLite database and the maintenance scripts. The upload settings let
+5 MB site photos through (PHP's default limit is 2 MB).
 
 Open the website at:
 
@@ -17,17 +22,10 @@ Open the website at:
 http://127.0.0.1:8000
 ```
 
-The demonstration accounts are stored in the SQLite `user` table:
-
-```text
-Administrator
-Username: admin123
-Password: admin123
-
-Manager
-Username: manager123
-Password: manager123
-```
+The demonstration accounts (administrator `admin123`, manager `manager123`) are created by
+`php database/migrate_user_roles.php`. Their passwords are in the credentials file supplied with
+the product, not in this public README. Change them, or create named accounts and deactivate
+these, before the site is shared.
 
 Passwords are stored as one-way hashes in SQLite, so the original password text is
 not exposed when the database file is shared.
@@ -75,3 +73,13 @@ php database/migrate_user_roles.php
 The migration and import commands are safe to run again. SQLite database files are
 ignored by Git, so each computer keeps its own accounts and sensor history. Git does
 not synchronise live sensor readings between running computers.
+
+## Security notes
+
+- Sensor readings are validated: `h1` and `h2` must be numbers from 0 to 100, `hasil` from 0 to
+  1,000,000, and `id_device` 1–64 letters, digits, dots, dashes or underscores; anything else gets HTTP 422.
+- Scripts in `database/` run from the command line only.
+- `database/import_users_sensors.sql` contains plain-text demo passwords: after loading it, run
+  `php database/migrate_user_roles.php` to hash them.
+- On Apache, `.htaccess` blocks `/database/` and data files. On Nginx, add the deny rules from the
+  technical report (Section 7.4). On PHP-FPM hosting, `.user.ini` raises the upload limit.

@@ -1,0 +1,9 @@
+# Apache: never serve the database, data files, docs or maintenance scripts.
+RedirectMatch 404 ^/database(/|$)
+RedirectMatch 404 /\.(git|env|user\.ini|DS_Store)
+<FilesMatch "\.(db|sqlite3?|sql|md|log|sh)$">
+    Require all denied
+</FilesMatch>
+<Files "router.php">
+    Require all denied
+</Files>
