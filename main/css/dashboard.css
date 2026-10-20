@@ -2477,6 +2477,17 @@ body[data-page="impacts"] .sidebar {
   .hardware-list-footer {
     flex-wrap: wrap;
   }
+
+  .user-editor,
+  .user-directory {
+    padding: 16px;
+  }
+
+  .user-section-heading,
+  .user-form-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
 }
 
 /* ==========================================================================
@@ -2989,4 +3000,15 @@ body[data-page="impacts"] .sidebar {
   .location-form__actions .location-button {
     flex: 1;
   }
+
 }
+
+  /* Site photo upload */
+.hardware-photo-field { display: grid; gap: 10px; }
+.hardware-photo-preview { display: flex; align-items: center; gap: 14px; }
+.hardware-photo-preview img { width: 120px; height: 80px; object-fit: cover; border-radius: 8px; border: 1px solid #d9d9d9; }
+.hardware-photo-remove { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; }
+
+.hardware-site { display: flex; align-items: center; gap: 10px; }
+.hardware-thumb { display: block; width: 56px; height: 42px; max-width: 56px; object-fit: cover; border-radius: 6px; flex: none; }
+
