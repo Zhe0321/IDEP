@@ -149,3 +149,76 @@ sort($cities);
 </section>
 
 <?php require __DIR__ . '/../location-manager.php'; ?>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const provinceSelect    = document.getElementById('province_id');
+  const districtSelect    = document.getElementById('district_id');
+  const subDistrictSelect = document.getElementById('sub_district_id');
+  const villageSelect     = document.getElementById('village_id');
+
+  function resetSelect(select, placeholder) {
+    select.innerHTML = `<option value="">${placeholder}</option>`;
+    select.disabled = true;
+  }
+
+  function populateSelect(select, items, placeholder) {
+    select.innerHTML = `<option value="">${placeholder}</option>`;
+    items.forEach(item => {
+      const opt = document.createElement('option');
+      opt.value = item.id;
+      opt.textContent = item.name;
+      select.appendChild(opt);
+    });
+    select.disabled = false;
+  }
+
+  provinceSelect.addEventListener('change', function () {
+    resetSelect(districtSelect, 'Select district first');
+    resetSelect(subDistrictSelect, 'Select district first');
+    resetSelect(villageSelect, 'Select sub-district first');
+    if (!this.value) return;
+
+    fetch(`/main/ajax-get-districts.php?province_id=${this.value}`)
+      .then(res => res.json())
+      .then(data => populateSelect(districtSelect, data, 'Select district/city'));
+  });
+
+  districtSelect.addEventListener('change', function () {
+    resetSelect(subDistrictSelect, 'Select sub-district first');
+    resetSelect(villageSelect, 'Select sub-district first');
+    if (!this.value) return;
+
+    fetch(`/main/ajax-get-subdistricts.php?district_id=${this.value}`)
+      .then(res => res.json())
+      .then(data => populateSelect(subDistrictSelect, data, 'Select sub-district'));
+  });
+
+  // Reload the province list after locations are added/edited in the Add Location dialog.
+  document.addEventListener('idep:locations-changed', function () {
+    const selectedProvince = provinceSelect.value;
+    fetch('/main/api/locations.php?level=province', { headers: { 'X-Requested-With': 'fetch' } })
+      .then(res => res.json())
+      .then(data => {
+        if (!data.success) return;
+        populateSelect(provinceSelect, data.items, 'Select province');
+        resetSelect(districtSelect, 'Select province first');
+        resetSelect(subDistrictSelect, 'Select district first');
+        resetSelect(villageSelect, 'Select sub-district first');
+        if (data.items.some(item => String(item.id) === selectedProvince)) {
+          provinceSelect.value = selectedProvince;
+          provinceSelect.dispatchEvent(new Event('change'));
+        }
+      });
+  });
+
+  subDistrictSelect.addEventListener('change', function () {
+    resetSelect(villageSelect, 'Select village');
+    if (!this.value) return;
+
+    fetch(`/main/ajax-get-villages.php?sub_district_id=${this.value}`)
+      .then(res => res.json())
+      .then(data => populateSelect(villageSelect, data, 'Select village'));
+  });
+});
+</script>
