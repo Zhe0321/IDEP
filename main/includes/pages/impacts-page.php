@@ -16,8 +16,8 @@ declare(strict_types=1);
 <section class="impact-values" aria-labelledby="impact-values-title">
   <div class="impact-values__heading">
     <h2 id="impact-values-title">Our Water’s Lasting Values</h2>
-    <p>Based on the attached impact analysis for <span data-programme-metric="well-count"><?= (int)$programmeMetrics['wellCount'] ?></span> recharge wells using peak-performing well assumptions.</p>
-    <p>These figures are public-facing impact estimates, not operational sensor KPIs.</p>
+    <p>Calculated from cumulative valid sensor readings using 50 litres per person per day (18,250 litres per person per year).</p>
+    <p>These figures update automatically as new sensor data is received.</p>
   </div>
 
   <div class="impact-value-grid">
