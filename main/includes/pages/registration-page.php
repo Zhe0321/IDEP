@@ -86,13 +86,18 @@ sort($cities);
     </label>
 
     <label class="hardware-form-grid__wide"><span>Address</span><input name="address"></label>
-    <div class="hardware-form-grid__wide hardware-photo-field">
-      <label><span>Site photo (JPG, PNG or WebP, max 5 MB)</span>
-        <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" data-hardware-photo-input>
-      </label>
-      <div class="hardware-photo-preview" data-hardware-photo-preview hidden>
-        <img alt="Site photo preview" data-hardware-photo-img>
-        <label class="hardware-photo-remove"><input type="checkbox" name="remove_photo" value="1" data-hardware-photo-remove> Remove photo</label>
+        <div class="hardware-form-grid__wide hardware-photo-field">
+      <span class="hardware-photo-title">Site photo</span>
+      <div class="hardware-photo-picker">
+        <label class="hardware-photo-button">
+          <span>Choose photo</span>
+          <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" data-hardware-photo-input>
+        </label>
+        <small class="hardware-photo-hint">JPG, PNG or WebP, up to 5 MB</small>
+        <div class="hardware-photo-preview" data-hardware-photo-preview hidden>
+          <img alt="Site photo preview" data-hardware-photo-img>
+          <label class="hardware-photo-remove"><input type="checkbox" name="remove_photo" value="1" data-hardware-photo-remove> <span>Remove photo</span></label>
+        </div>
       </div>
     </div>
   </div>
