@@ -56,8 +56,10 @@ $removePhoto = ($_POST['remove_photo'] ?? '') === '1';
 if (isset($_FILES['photo']) && ($_FILES['photo']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
     $upload = $_FILES['photo'];
     if ($upload['error'] === UPLOAD_ERR_INI_SIZE || $upload['error'] === UPLOAD_ERR_FORM_SIZE) {
+        // PHP's own upload_max_filesize is lower than our 5 MB limit: say which limit applied.
+        $iniLimit = (string) ini_get('upload_max_filesize');
         http_response_code(422);
-        echo json_encode(['success' => false, 'message' => 'Photo is too large (max 5 MB).']);
+        echo json_encode(['success' => false, 'message' => "Photo is larger than this server accepts ({$iniLimit}). Use a smaller photo or ask the administrator to raise upload_max_filesize to 6M."]);
         exit();
     }
     if ($upload['error'] !== UPLOAD_ERR_OK || !is_uploaded_file($upload['tmp_name'])) {

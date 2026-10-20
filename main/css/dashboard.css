@@ -1551,6 +1551,16 @@ body[data-page="impacts"] .sidebar {
   display: grid;
 }
 
+.alerts-empty {
+  margin: 0;
+  border: 1px solid #cfe7da;
+  border-radius: 10px;
+  background: #edf9f2;
+  padding: 18px;
+  color: #168f54;
+  font-size: 13px;
+}
+
 .alert-row {
   width: 100%;
   min-height: 82px;
@@ -3011,4 +3021,3 @@ body[data-page="impacts"] .sidebar {
 
 .hardware-site { display: flex; align-items: center; gap: 10px; }
 .hardware-thumb { display: block; width: 56px; height: 42px; max-width: 56px; object-fit: cover; border-radius: 6px; flex: none; }
-

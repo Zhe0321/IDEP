@@ -48,68 +48,126 @@ if (($currentPage ?? '') === 'historical' && is_file($databaseBootstrap)) {
     }
 }
 
-$alerts = [
-    [
-        'title' => 'Inactive',
-        'wellId' => 'RW-12',
-        'village' => 'Denpasar',
-        'summary' => 'Inactive',
-        'severity' => 'critical',
-        'state' => 'Open',
-        'alert' => 'No Activity',
-        'signal' => 'Weak',
-        'lastTransmission' => '35 min ago',
-        'action' => 'Field check',
-    ],
-    [
-        'title' => 'Weak Signal',
-        'wellId' => 'RW-31',
-        'village' => 'Jembrana',
-        'summary' => 'Signal below threshold',
-        'severity' => 'warning',
-        'state' => 'Open',
-        'alert' => 'Low Signal',
-        'signal' => 'Weak',
-        'lastTransmission' => '20 min ago',
-        'action' => 'Inspect antenna',
-    ],
-    [
-        'title' => 'Missing Transmission',
-        'wellId' => 'RW-04',
-        'village' => 'Sanur',
-        'summary' => 'No data for 4 hours',
-        'severity' => 'critical',
-        'state' => 'Open',
-        'alert' => 'Missing Data',
-        'signal' => 'No Signal',
-        'lastTransmission' => '4 hours ago',
-        'action' => 'Check sensor power',
-    ],
-    [
-        'title' => 'Data Quality Review',
-        'wellId' => 'RW-07',
-        'village' => 'Tabanan',
-        'summary' => 'Unexpected level jump',
-        'severity' => 'warning',
-        'state' => 'Open',
-        'alert' => 'Quality Review',
-        'signal' => 'Strong',
-        'lastTransmission' => '15 min ago',
-        'action' => 'Validate reading',
-    ],
-    [
-        'title' => 'Normalised',
-        'wellId' => 'RW-18',
-        'village' => 'Gianyar',
-        'summary' => 'Back within threshold',
-        'severity' => 'resolved',
-        'state' => 'Resolved',
-        'alert' => 'Recovered',
-        'signal' => 'Strong',
-        'lastTransmission' => '10 min ago',
-        'action' => 'No action required',
-    ],
-];
+$alerts = [];
+$alertDatabaseBootstrap = dirname(__DIR__, 2) . '/database/db.php';
+
+if (is_file($alertDatabaseBootstrap)) {
+    try {
+        require_once $alertDatabaseBootstrap;
+
+        $alertStatement = idepDatabase()->query(
+            'SELECT
+                w.well_code,
+                COALESCE(v.name, dc.name, \'Unassigned\') AS village_name,
+                s.id_device,
+                COALESCE(s.status, 1) AS sensor_status,
+                latest.h1,
+                latest.h2,
+                latest.hasil,
+                latest.received_at
+             FROM wells w
+             JOIN sensors s ON s.id = w.sensor_id
+             LEFT JOIN village v ON v.id = w.village_id
+             LEFT JOIN sub_district sd ON sd.id = v.sub_district_id
+             LEFT JOIN district_city dc ON dc.id = sd.district_id
+             LEFT JOIN sensor_readings latest ON latest.id = (
+                SELECT sr.id
+                FROM sensor_readings sr
+                WHERE sr.sensor_id = s.id
+                ORDER BY sr.received_at DESC, sr.id DESC
+                LIMIT 1
+             )
+             WHERE COALESCE(w.status, 1) != 0
+             ORDER BY w.well_code'
+        );
+
+        $baliTimezone = new DateTimeZone('Asia/Makassar');
+        $baliNow = new DateTimeImmutable('now', $baliTimezone);
+        $ageLabel = static function (?int $seconds): string {
+            if ($seconds === null) {
+                return 'Never';
+            }
+            if ($seconds < 60) {
+                return 'Just now';
+            }
+            if ($seconds < 3600) {
+                $minutes = max(1, (int) floor($seconds / 60));
+                return $minutes . ' min ago';
+            }
+            if ($seconds < 86400) {
+                $hours = max(1, (int) floor($seconds / 3600));
+                return $hours . ($hours === 1 ? ' hour ago' : ' hours ago');
+            }
+            $days = max(1, (int) floor($seconds / 86400));
+            return $days . ($days === 1 ? ' day ago' : ' days ago');
+        };
+
+        foreach ($alertStatement->fetchAll() as $sensor) {
+            $receivedAt = null;
+            $secondsSinceReading = null;
+            $receivedAtValue = trim((string) ($sensor['received_at'] ?? ''));
+            if ($receivedAtValue !== '') {
+                $receivedAt = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $receivedAtValue, $baliTimezone);
+                if ($receivedAt !== false) {
+                    $secondsSinceReading = max(0, $baliNow->getTimestamp() - $receivedAt->getTimestamp());
+                }
+            }
+
+            $lastTransmission = $receivedAt instanceof DateTimeImmutable
+                ? $receivedAt->format('d M Y H:i') . ' WITA (' . $ageLabel($secondsSinceReading) . ')'
+                : 'Never';
+            $baseAlert = [
+                'wellId' => (string) $sensor['well_code'],
+                'village' => (string) $sensor['village_name'],
+                'state' => 'Open',
+                'lastTransmission' => $lastTransmission,
+            ];
+
+            if ((int) $sensor['sensor_status'] === 0) {
+                $alerts[] = $baseAlert + [
+                    'title' => 'Inactive',
+                    'summary' => 'Sensor is disabled',
+                    'severity' => 'critical',
+                    'alert' => 'No Activity',
+                    'signal' => 'Inactive',
+                    'action' => 'Activate or inspect the sensor',
+                ];
+                continue;
+            }
+
+            if ($secondsSinceReading === null || $secondsSinceReading > 180) {
+                $alerts[] = $baseAlert + [
+                    'title' => 'Missing Transmission',
+                    'summary' => $secondsSinceReading === null
+                        ? 'No sensor data received'
+                        : 'Last data ' . $ageLabel($secondsSinceReading),
+                    'severity' => 'critical',
+                    'alert' => 'Missing Data',
+                    'signal' => 'No Signal',
+                    'action' => 'Check sensor power and connection',
+                ];
+                continue;
+            }
+
+            $h1 = (float) ($sensor['h1'] ?? 0);
+            $h2 = (float) ($sensor['h2'] ?? 0);
+            $hasil = (float) ($sensor['hasil'] ?? 0);
+            if (($h1 === 0.0 && $h2 === 0.0 && $hasil !== 0.0) || $hasil < 0.0) {
+                $alerts[] = $baseAlert + [
+                    'title' => 'Data Quality Review',
+                    'summary' => 'Reading does not match the sensor rules',
+                    'severity' => 'warning',
+                    'alert' => 'Quality Review',
+                    'signal' => 'Online',
+                    'action' => 'Validate h1, h2 and hasil',
+                ];
+            }
+        }
+    } catch (Throwable $error) {
+        error_log('Alert query failed: ' . $error->getMessage());
+        $alerts = [];
+    }
+}
 
 $generatedReports = [
     ['name' => 'Ubud Groundwater Summary', 'period' => 'Mar–May 2026', 'createdBy' => 'Field Team', 'date' => '14 Jul', 'status' => 'Ready', 'export' => 'PDF'],
