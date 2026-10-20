@@ -3014,10 +3014,109 @@ body[data-page="impacts"] .sidebar {
 }
 
   /* Site photo upload */
-.hardware-photo-field { display: grid; gap: 10px; }
-.hardware-photo-preview { display: flex; align-items: center; gap: 14px; }
-.hardware-photo-preview img { width: 120px; height: 80px; object-fit: cover; border-radius: 8px; border: 1px solid #d9d9d9; }
-.hardware-photo-remove { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; }
+/* Site photo upload */
+.hardware-form-grid .hardware-photo-field {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--line);
+  padding: 10px 8px;
+}
+
+.hardware-photo-picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+}
+
+.hardware-form-grid .hardware-photo-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 34px;
+  padding: 0 16px;
+  gap: 0;
+  border: 1px dashed var(--deep-blue);
+  border-radius: 7px;
+  background: #fffdf6;
+  color: var(--deep-blue);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.hardware-form-grid .hardware-photo-button span {
+  font-size: 11px;
+}
+
+.hardware-form-grid .hardware-photo-button input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.hardware-form-grid .hardware-photo-button:hover {
+  background: var(--pale-blue);
+}
+
+.hardware-form-grid .hardware-photo-button:focus-within {
+  outline: 2px solid var(--deep-blue);
+  outline-offset: 2px;
+}
+
+.hardware-photo-hint {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.hardware-photo-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.hardware-photo-preview[hidden] {
+  display: none;
+}
+
+.hardware-photo-preview img {
+  width: 96px;
+  height: 72px;
+  object-fit: cover;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.hardware-form-grid .hardware-photo-remove {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  color: var(--muted);
+}
+
+.hardware-form-grid .hardware-photo-remove input {
+  width: auto;
+  height: auto;
+}
+
+.hardware-form-grid .hardware-photo-remove span {
+  font-size: 11px;
+}
+
+@media (max-width: 760px) {
+  .hardware-form-grid .hardware-photo-field {
+    grid-template-columns: 1fr;
+  }
+}
 
 .hardware-site { display: flex; align-items: center; gap: 10px; }
 .hardware-thumb { display: block; width: 56px; height: 42px; max-width: 56px; object-fit: cover; border-radius: 6px; flex: none; }
