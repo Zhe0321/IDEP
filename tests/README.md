@@ -15,10 +15,16 @@ and results are documented in Sections 8 and 9 of the technical report.
 ## Run the tests
 
 1. Copy the whole `IDEP` folder, for example to `IDEP-test`.
-2. In the copy, set up the database as the main README describes, including:
+2. In the copy, set up the database (the same commands as the main README):
 
    ```bash
+   php database/add_missing_columns.php
+   php database/add_photo_column.php
+   php database/add_location_types.php
+   php database/import_bali_wilayah.php
    php database/migrate_user_roles.php
+   php database/import_recharge_wells.php
+   php database/register_idep_device.php
    ```
 
 3. Terminal 1, inside the copy:
@@ -33,10 +39,15 @@ and results are documented in Sections 8 and 9 of the technical report.
    python3 tests/idep_blackbox_tests.py
    ```
 
+The script first checks that the server is running, the database is set up and the server
+is using this copy's database, then asks you to confirm (add `--yes` to skip the question).
 Each test prints `PASS` or `FAIL` with what it observed, then the total
 (for example `61/61 passed`). Results are also saved to `blackbox-results.json`.
 
 ## Notes
+
+- On older macOS Python you may see a `NotOpenSSLWarning` from urllib3. It is harmless and
+  the script now hides it.
 
 - Run the tests from the project folder, or set `IDEP_ROOT` to its path:
   `IDEP_ROOT=/path/to/IDEP-test python3 /path/to/idep_blackbox_tests.py`
