@@ -18,6 +18,39 @@ if ($username === '' || $password === '') {
     exit;
 }
 
+// ---- Brute-force protection: 5 failed attempts per IP, then locked for 15 minutes ----
+const LOGIN_MAX_FAILURES = 5;
+const LOGIN_WINDOW_SECONDS = 900;
+$clientIp = (string) ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
+$attemptsPdo = null;
+
+try {
+    require_once dirname(__DIR__, 2) . '/database/db.php';
+    $attemptsPdo = idepDatabase();
+    $attemptsPdo->exec(
+        'CREATE TABLE IF NOT EXISTS login_attempts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ip TEXT NOT NULL,
+            attempted_at INTEGER NOT NULL
+        )'
+    );
+    $recent = $attemptsPdo->prepare(
+        'SELECT COUNT(*) FROM login_attempts WHERE ip = :ip AND attempted_at > :since'
+    );
+    $recent->execute([':ip' => $clientIp, ':since' => time() - LOGIN_WINDOW_SECONDS]);
+    if ((int) $recent->fetchColumn() >= LOGIN_MAX_FAILURES) {
+        http_response_code(429);
+        header('Retry-After: ' . LOGIN_WINDOW_SECONDS);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Too many failed sign-in attempts. Please wait 15 minutes and try again.',
+        ]);
+        exit;
+    }
+} catch (Throwable) {
+    $attemptsPdo = null;
+}
+
 $authenticatedUser = null;
 
 try {
@@ -53,23 +86,26 @@ try {
     $authenticatedUser = null;
 }
 
-// Temporary demonstration account for localhost only while the shared user table is empty.
-$requestHost = strtolower(explode(':', (string) ($_SERVER['HTTP_HOST'] ?? ''))[0]);
-$isLocalhost = in_array($requestHost, ['127.0.0.1', 'localhost'], true);
-if ($authenticatedUser === null && $isLocalhost && $username === 'admin123' && $password === 'admin123') {
-    $authenticatedUser = [
-        'id' => 0,
-        'name' => 'Field Team',
-        'email' => '',
-        'username' => 'admin123',
-        'role' => 'admin',
-    ];
-}
-
 if ($authenticatedUser === null) {
+    if ($attemptsPdo !== null) {
+        try {
+            $attemptsPdo->prepare('INSERT INTO login_attempts (ip, attempted_at) VALUES (:ip, :now)')
+                ->execute([':ip' => $clientIp, ':now' => time()]);
+            $attemptsPdo->prepare('DELETE FROM login_attempts WHERE attempted_at < :old')
+                ->execute([':old' => time() - 86400]);
+        } catch (Throwable) {
+        }
+    }
     http_response_code(401);
     echo json_encode(['success' => false, 'message' => 'Incorrect email/username or password.']);
     exit;
+}
+
+if ($attemptsPdo !== null) {
+    try {
+        $attemptsPdo->prepare('DELETE FROM login_attempts WHERE ip = :ip')->execute([':ip' => $clientIp]);
+    } catch (Throwable) {
+    }
 }
 
 session_set_cookie_params([

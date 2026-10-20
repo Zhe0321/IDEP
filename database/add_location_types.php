@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+
+if (PHP_SAPI !== 'cli') { http_response_code(404); exit; } // command-line only
 /**
  * Optional: adds a `type` column to `village` so the Add Location manager can
  * remember whether a village is a Desa or a Kelurahan. Safe to run more than once.

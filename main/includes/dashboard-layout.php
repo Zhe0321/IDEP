@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+require_once __DIR__ . '/security-headers.php';
 
 if (!isset(
     $isAdmin,
@@ -14,12 +15,17 @@ if (!isset(
     exit('Dashboard role configuration is missing.');
 }
 
+$csrfToken = '';
 if ($isAdmin) {
     session_start();
     if (($_SESSION['idep_admin'] ?? false) !== true) {
         header('Location: /main/login.php');
         exit;
     }
+    
+    require_once __DIR__ . '/admin-endpoint.php';   
+    $csrfToken = idepCsrfToken();                    
+
     if (!empty($_SESSION['idep_user_name'])) {
         $userName = (string) $_SESSION['idep_user_name'];
         $nameParts = preg_split('/\s+/', trim($userName)) ?: [];
@@ -103,7 +109,7 @@ $pageDetails = [
     ],
     'alerts' => [
         'title' => 'Alerts',
-        'subtitle' => 'Abnormal readings, battery issues and missing transmissions',
+        'subtitle' => 'Missing transmissions, disabled sensors and data-quality checks',
     ],
     'reports' => [
         'title' => 'Reports',
@@ -156,6 +162,7 @@ $navIcons = [
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Bali Water Protection groundwater monitoring dashboard.">
   <title><?= htmlspecialchars($pageTitle) ?> | Bali Water Protection</title>
+  <?php if ($csrfToken !== ''): ?><meta name="csrf-token" content="<?= htmlspecialchars($csrfToken) ?>"><?php endif; ?>
   <link rel="icon" href="/images/brand/bwp-mark.png" type="image/png">
   <link rel="stylesheet" href="/main/css/dashboard.css?v=<?= $dashboardCssVersion ?>">
   <?php if (in_array($currentPage, ['map', 'dashboard'], true)): ?>

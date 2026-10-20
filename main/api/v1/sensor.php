@@ -13,8 +13,9 @@ try {
     http_response_code(500);
     echo json_encode([
         'status' => false,
-        'message' => $error->getMessage(),
+        'message' => 'Sensor service is temporarily unavailable',
     ], JSON_PRETTY_PRINT);
+    error_log('Sensor API database error: ' . $error->getMessage());
     exit;
 }
 
@@ -92,6 +93,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    // Values must be numbers within a plausible range, and the device ID a short plain identifier.
+    $isValidNumber = static fn ($value, float $max): bool =>
+        is_numeric($value) && is_finite((float) $value) && (float) $value >= 0 && (float) $value <= $max;
+
+    if (
+        !is_string($id_device) ||
+        preg_match('/^[A-Za-z0-9_.-]{1,64}$/', $id_device) !== 1 ||
+        !$isValidNumber($h1, 100) ||
+        !$isValidNumber($h2, 100) ||
+        !$isValidNumber($hasil, 1000000)
+    ) {
+        http_response_code(422);
+        echo json_encode([
+            'status' => false,
+            'message' => 'Invalid values: id_device must be 1-64 letters, digits, dot, dash or underscore; h1 and h2 must be numbers from 0 to 100; hasil must be a number from 0 to 1000000',
+        ], JSON_PRETTY_PRINT);
+        exit;
+    }
+
     // If both height readings are zero, the result must also be zero.
     if (
         is_numeric($h1) &&
@@ -136,9 +156,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         );
         $readingStatement->execute([
             ':sensor_id' => $sensorId,
-            ':h1' => $h1,
-            ':h2' => $h2,
-            ':hasil' => $hasil,
+            ':h1' => (float) $h1,
+            ':h2' => (float) $h2,
+            ':hasil' => (float) $hasil,
             ':received_at' => $receivedAt,
             ':created_at' => $receivedAt,
         ]);

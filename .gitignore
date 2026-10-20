@@ -6,3 +6,4 @@ database/connection.php
 *.sqlite
 *.sqlite3
 database/idep_groundwater
+uploads/

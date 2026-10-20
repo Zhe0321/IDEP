@@ -86,6 +86,20 @@ sort($cities);
     </label>
 
     <label class="hardware-form-grid__wide"><span>Address</span><input name="address"></label>
+        <div class="hardware-form-grid__wide hardware-photo-field">
+      <span class="hardware-photo-title">Site photo</span>
+      <div class="hardware-photo-picker">
+        <label class="hardware-photo-button">
+          <span>Choose photo</span>
+          <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" data-hardware-photo-input>
+        </label>
+        <small class="hardware-photo-hint">JPG, PNG or WebP, up to 5 MB</small>
+        <div class="hardware-photo-preview" data-hardware-photo-preview hidden>
+          <img alt="Site photo preview" data-hardware-photo-img>
+          <label class="hardware-photo-remove"><input type="checkbox" name="remove_photo" value="1" data-hardware-photo-remove> <span>Remove photo</span></label>
+        </div>
+      </div>
+    </div>
   </div>
   <div class="hardware-form-actions"><span data-hardware-message hidden></span><button type="submit" data-hardware-submit>Add device</button></div>
 </form>
@@ -122,9 +136,9 @@ sort($cities);
                 data-address="<?= htmlspecialchars($record['address'] ?? '') ?>"
                 data-longitude="<?= htmlspecialchars((string)($record['longitude'] ?? '')) ?>"
                 data-latitude="<?= htmlspecialchars((string)($record['latitude'] ?? '')) ?>"
+                data-photo="<?= htmlspecialchars((string)($record['photo'] ?? '')) ?>"
               >
-                <td><strong><?= htmlspecialchars($record['wellCode'] ?? '') ?></strong><br><?= htmlspecialchars($record['name'] ?? '') ?></td>
-                <td><?= htmlspecialchars($record['type'] ?? '—') ?><br><?= $record['depth'] !== null ? htmlspecialchars((string)$record['depth']) . ' m' : '—' ?></td>
+                <td><div class="hardware-site"><?php if (!empty($record['photo'])): ?><img class="hardware-thumb" src="<?= htmlspecialchars($record['photo']) ?>" alt="" loading="lazy"><?php endif; ?><span><strong><?= htmlspecialchars($record['wellCode'] ?? '') ?></strong><br><?= htmlspecialchars($record['name'] ?? '') ?></span></div></td>                <td><?= htmlspecialchars($record['type'] ?? '—') ?><br><?= $record['depth'] !== null ? htmlspecialchars((string)$record['depth']) . ' m' : '—' ?></td>
                 <td><?= htmlspecialchars($record['city'] ?? '') ?><br><small><?= htmlspecialchars($record['address'] ?? '—') ?></small></td>
                 <td><?= htmlspecialchars($record['absorption'] ?? '—') ?></td>
                 <td><?= htmlspecialchars($record['sensorDeviceId'] ?? 'No Signal') ?></td>
@@ -136,7 +150,7 @@ sort($cities);
         </tbody>
       </table>
     </div>
-    <footer class="hardware-list-footer"><span>Rows per page <select><option>10</option></select></span><span data-hardware-count>Showing <?= count($hardwareRecords ?? []) ?> entries</span><div><button type="button">←</button><button type="button">→</button></div></footer>
+    <footer class="hardware-list-footer"><span>Rows per page <select data-hardware-page-size><option>10</option><option>25</option><option>50</option><option>100</option></select></span><span data-hardware-count>Showing <?= count($hardwareRecords ?? []) ?> entries</span><div><button type="button" data-hardware-prev>←</button><button type="button" data-hardware-next>→</button></div></footer>
   </article>
 </section>
 

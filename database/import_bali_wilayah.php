@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+
+if (PHP_SAPI !== 'cli') { http_response_code(404); exit; } // command-line only
 require __DIR__ . '/db.php';
 
 const BALI_PROVINCE_ID = '51'; // BPS code for Bali in the source dataset

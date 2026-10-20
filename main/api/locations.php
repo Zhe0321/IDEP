@@ -26,6 +26,9 @@ session_start();
 if (($_SESSION['idep_admin'] ?? false) !== true) {
     locationRespond(401, ['success' => false, 'message' => 'Your session has ended. Sign in again to manage locations.']);
 }
+
+require_once dirname(__DIR__) . '/includes/admin-endpoint.php';
+idepRequireCsrf();
 session_write_close();
 
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
