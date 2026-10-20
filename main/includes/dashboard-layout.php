@@ -109,7 +109,7 @@ $pageDetails = [
     ],
     'alerts' => [
         'title' => 'Alerts',
-        'subtitle' => 'Abnormal readings, battery issues and missing transmissions',
+        'subtitle' => 'Missing transmissions, disabled sensors and data-quality checks',
     ],
     'reports' => [
         'title' => 'Reports',
