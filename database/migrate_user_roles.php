@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+
+if (PHP_SAPI !== 'cli') { http_response_code(404); exit; } // command-line only
 require __DIR__ . '/db.php';
 
 $pdo = idepDatabase();

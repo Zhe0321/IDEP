@@ -86,19 +86,6 @@ try {
     $authenticatedUser = null;
 }
 
-// Temporary demonstration account for localhost only while the shared user table is empty.
-$requestHost = strtolower(explode(':', (string) ($_SERVER['HTTP_HOST'] ?? ''))[0]);
-$isLocalhost = in_array($requestHost, ['127.0.0.1', 'localhost'], true);
-if ($authenticatedUser === null && $isLocalhost && $username === 'admin123' && $password === 'admin123') {
-    $authenticatedUser = [
-        'id' => 0,
-        'name' => 'Field Team',
-        'email' => '',
-        'username' => 'admin123',
-        'role' => 'admin',
-    ];
-}
-
 if ($authenticatedUser === null) {
     if ($attemptsPdo !== null) {
         try {
