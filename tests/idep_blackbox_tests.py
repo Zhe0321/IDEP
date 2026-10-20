@@ -5,7 +5,8 @@ See tests/README.md. In short, on a COPY of the project with a migrated database
     python3 tests/idep_blackbox_tests.py     # terminal 2, in the project copy
 The tests add and delete data, so never run them on the copy you demo or submit.
 """
-import json, os, re, sqlite3, sys, time
+import json, os, re, sqlite3, sys, time, warnings
+warnings.filterwarnings("ignore", message=".*OpenSSL.*")  # harmless macOS LibreSSL notice from urllib3
 import requests
 
 BASE = "http://127.0.0.1:8000"
@@ -37,6 +38,50 @@ def login(user, pw, headers=None):
         if m:
             s.headers["X-CSRF-Token"] = m.group(1)
     return s, r
+
+
+# ---------- Pre-flight checks: stop early with a clear message instead of failing half-way ----------
+SETUP_HELP = """Set up the database in this project copy first (see the main README):
+    php database/add_missing_columns.php
+    php database/add_photo_column.php
+    php database/add_location_types.php
+    php database/import_bali_wilayah.php
+    php database/migrate_user_roles.php
+    php database/import_recharge_wells.php
+    php database/register_idep_device.php"""
+
+
+def preflight():
+    if not os.path.exists(DB):
+        sys.exit(f"No database at {DB}.\nRun the tests from inside the project copy, or set IDEP_ROOT.")
+    try:
+        latest = requests.get(f"{BASE}/main/api/v1/sensor.php", timeout=5).json()
+    except Exception:
+        sys.exit(f"The server is not running at {BASE}.\nStart it in the project copy with ./start-server.sh, then run the tests in a second terminal.")
+    con = sqlite3.connect(DB)
+    try:
+        villages = con.execute("select count(*) from village").fetchone()[0]
+        wells = con.execute("select count(*) from wells").fetchone()[0]
+        users = {r[0]: r[1] for r in con.execute("select username, password from user")}
+        newest = con.execute("select max(received_at) from sensor_readings").fetchone()[0]
+    except sqlite3.Error as error:
+        sys.exit(f"The database is not set up ({error}).\n\n{SETUP_HELP}")
+    finally:
+        con.close()
+    if villages == 0 or wells == 0:
+        sys.exit(f"The database has {villages} villages and {wells} wells, so it has not been set up.\n\n{SETUP_HELP}")
+    if not {"admin123", "manager123"} <= set(users):
+        sys.exit("The demo accounts admin123 and manager123 are missing. Run: php database/migrate_user_roles.php")
+    if latest.get("received_at") and newest and latest["received_at"] != newest:
+        sys.exit("The server is using a different database from this folder.\n"
+                 "Start ./start-server.sh in the same project copy you run the tests from.")
+    if "--yes" not in sys.argv:
+        print(f"These tests ADD AND DELETE data in:\n    {DB}\nOnly run them on a copy of the project, never the one you demo or submit.")
+        if input("Continue? [y/N] ").strip().lower() not in ("y", "yes"):
+            sys.exit("Stopped. Nothing was changed.")
+
+
+preflight()
 
 
 # ---------- IoT ingestion ----------
