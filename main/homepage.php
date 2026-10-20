@@ -86,8 +86,8 @@ $homepageJsVersion = (string) filemtime(__DIR__ . '/js/homepage.js');
       <div class="page-shell">
         <div class="section-heading reveal">
           <h2>Our Water’s Lasting Values</h2>
-          <p>Based on the attached impact analysis for <span data-programme-metric="well-count"><?= (int)$programmeMetrics['wellCount'] ?></span> recharge wells using peak-performing well assumptions.</p>
-          <p>These figures are public-facing impact estimates, not operational sensor KPIs.</p>
+          <p>Calculated from cumulative valid sensor readings using 50 litres per person per day (18,250 litres per person per year).</p>
+          <p>These figures update automatically as new sensor data is received.</p>
         </div>
 
         <div class="card-grid impact-grid">

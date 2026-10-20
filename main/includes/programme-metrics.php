@@ -3,8 +3,14 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__, 2) . '/database/db.php';
 
-const IDEP_REFERENCE_WELL_COUNT = 76;
-const IDEP_REFERENCE_PEOPLE_SUPPORTED = 498_000;
+const IDEP_LITRES_PER_PERSON_PER_DAY = 50;
+const IDEP_DAYS_PER_YEAR = 365;
+const IDEP_PEOPLE_PER_FAMILY = 4;
+
+// Keep this false for live figures calculated from actual sensor data.
+// Change it to true only when the presentation needs the approved fallback figure.
+const IDEP_USE_PRESENTATION_PEOPLE_FIGURE = true;
+const IDEP_PRESENTATION_PEOPLE_SUPPORTED = 498_000;
 
 function idepCompactNumber(float $value, int $decimals = 1): string
 {
@@ -33,6 +39,19 @@ function idepLitresDisplayLabel(float $litres): string
     return idepCompactNumber($litres) . ' L';
 }
 
+function idepPeopleDisplayLabel(float $people): string
+{
+    if ($people > 0 && $people < 1) {
+        return rtrim(rtrim(number_format($people, 2, '.', ''), '0'), '.');
+    }
+
+    if ($people < 1_000) {
+        return number_format($people, 0, '.', ',');
+    }
+
+    return idepCompactNumber($people);
+}
+
 function idepDistrictDisplayName(string $name): string
 {
     $name = preg_replace('/^(KAB\.|KOTA)\s+/i', '', trim($name)) ?? trim($name);
@@ -44,7 +63,8 @@ function idepDistrictDisplayName(string $name): string
  *
  * Well and location totals come from active database records. Absorbed litres are the
  * sum of actual sensor `hasil` readings; readings where both h1 and h2 are zero count
- * as zero. The people estimate retains the approved 498K-for-76-wells baseline.
+ * as zero. People supported is calculated from the same valid absorbed volume,
+ * using 50 litres per person per day (18,250 litres per person per year).
  *
  * @return array<string, mixed>
  */
@@ -66,10 +86,6 @@ function idepProgrammeMetrics(?PDO $pdo = null): array
     )->fetch() ?: [];
 
     $wellCount = (int)($summary['well_count'] ?? 0);
-    $peopleSupported = (int)round(
-        $wellCount * (IDEP_REFERENCE_PEOPLE_SUPPORTED / IDEP_REFERENCE_WELL_COUNT)
-    );
-    $familiesSupported = (int)round($peopleSupported / 4);
 
     $actualLitres = (float)$pdo->query(
         'SELECT COALESCE(SUM(
@@ -81,6 +97,19 @@ function idepProgrammeMetrics(?PDO $pdo = null): array
         ), 0)
         FROM sensor_readings'
     )->fetchColumn();
+
+    $litresPerPersonPerYear = IDEP_LITRES_PER_PERSON_PER_DAY * IDEP_DAYS_PER_YEAR;
+    $peopleSupported = $litresPerPersonPerYear > 0
+        ? max(0, $actualLitres / $litresPerPersonPerYear)
+        : 0.0;
+    $familiesSupported = $peopleSupported / IDEP_PEOPLE_PER_FAMILY;
+    $peopleCalculationMode = 'live_sensor_data';
+
+    if (IDEP_USE_PRESENTATION_PEOPLE_FIGURE) {
+        $peopleSupported = (float) IDEP_PRESENTATION_PEOPLE_SUPPORTED;
+        $familiesSupported = $peopleSupported / IDEP_PEOPLE_PER_FAMILY;
+        $peopleCalculationMode = 'presentation_fallback';
+    }
 
     $dailyAverageStatement = $pdo->prepare(
         'SELECT AVG(
@@ -165,13 +194,17 @@ function idepProgrammeMetrics(?PDO $pdo = null): array
             ? number_format($dailyAverageAbsorb, 2, '.', ',') . ' L'
             : '—',
         'dailyAverageDate' => $baliDate,
-        'peopleSupported' => $peopleSupported,
-        'peopleSupportedLabel' => '~' . idepCompactNumber($peopleSupported, 0),
-        'familiesSupported' => $familiesSupported,
-        'familiesSupportedLabel' => idepCompactNumber($familiesSupported, 0),
+        'peopleSupported' => round($peopleSupported, 4),
+        'peopleSupportedLabel' => '~' . idepPeopleDisplayLabel($peopleSupported),
+        'familiesSupported' => round($familiesSupported, 4),
+        'familiesSupportedLabel' => idepPeopleDisplayLabel($familiesSupported),
+        'litresPerPersonPerYear' => $litresPerPersonPerYear,
+        'peopleCalculationMode' => $peopleCalculationMode,
         'topDistricts' => $topDistricts,
         'topSensors' => $topSensors,
-        'calculation' => 'Actual sum of valid sensor hasil readings.',
+        'calculation' => $peopleCalculationMode === 'live_sensor_data'
+            ? 'Valid sensor hasil total ÷ 18,250 L per person per year.'
+            : 'Presentation fallback: 498,000 people.',
         'updatedAt' => $baliNow->format(DateTimeInterface::ATOM),
     ];
 }
