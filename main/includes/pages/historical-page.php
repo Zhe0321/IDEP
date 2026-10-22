@@ -31,11 +31,30 @@ sort($cities);
       <option value="4">Type 4</option>
     </select>
   </label>
+  <label>
+    <span>Chart scope</span>
+    <select data-history-chart-filter="well">
+      <option value="">All monitored wells</option>
+      <?php foreach ($historicalSensorWells as $well): ?>
+        <option value="<?= htmlspecialchars((string)$well['well_code']) ?>"><?= htmlspecialchars((string)$well['well_code']) ?> · <?= htmlspecialchars((string)$well['well_name']) ?></option>
+      <?php endforeach; ?>
+    </select>
+  </label>
+  <label>
+    <span>Chart interval</span>
+    <select data-history-chart-filter="granularity">
+      <option value="auto">Automatic</option>
+      <option value="day">Daily</option>
+      <option value="month">Monthly</option>
+      <option value="year">Yearly</option>
+    </select>
+  </label>
   <button class="operation-export" type="button" data-export-measurements>CSV / Excel Export</button>
 </section>
 
 <section class="panel historical-chart-panel">
   <h2>Historical Measurements</h2>
+  <p class="panel-note" data-historical-chart-summary>Loading cumulative absorption…</p>
   <div class="historical-chart-wrap">
     <canvas id="historical-chart" aria-label="Historical water absorption chart"></canvas>
   </div>

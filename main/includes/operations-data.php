@@ -2,11 +2,19 @@
 declare(strict_types=1);
 
 $measurementRecords = [];
+$historicalSensorWells = [];
 
 $databaseBootstrap = dirname(__DIR__, 2) . '/database/db.php';
 if (($currentPage ?? '') === 'historical' && is_file($databaseBootstrap)) {
     try {
         require_once $databaseBootstrap;
+        $historicalSensorWells = idepDatabase()->query(
+            'SELECT w.well_code, w.well_name
+             FROM wells w
+             JOIN sensors s ON s.id = w.sensor_id
+             WHERE COALESCE(w.status, 1) != 0
+             ORDER BY w.well_code ASC'
+        )->fetchAll();
         $deviceLocations = [];
         foreach ($wells as $well) {
             if (isset($well['deviceId'])) {

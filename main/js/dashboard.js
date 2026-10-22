@@ -486,13 +486,58 @@ function applyOperationalSearch() {
     row.hidden = !(matchesSearch && matchesVillage && matchesType && matchesPeriod);
   });
 
-  drawHistoricalChart();
 }
 
 searchInput?.addEventListener("input", applyOperationalSearch);
-document.querySelectorAll("[data-history-filter]").forEach((filter) => filter.addEventListener("change", applyOperationalSearch));
+document.querySelectorAll("[data-history-filter]").forEach((filter) => filter.addEventListener("change", () => {
+  applyOperationalSearch();
+  loadHistoricalChart();
+}));
+document.querySelectorAll("[data-history-chart-filter]").forEach((filter) => filter.addEventListener("change", loadHistoricalChart));
 
 const historicalChart = document.querySelector("#historical-chart");
+const historicalChartSummary = document.querySelector("[data-historical-chart-summary]");
+let historicalChartData = [];
+let historicalChartGranularity = "day";
+let historicalChartRequest = 0;
+
+function compactLitres(value) {
+  if (Math.abs(value) >= 1_000_000) return `${(value / 1_000_000).toFixed(1).replace(/\.0$/, "")}M L`;
+  if (Math.abs(value) >= 1_000) return `${(value / 1_000).toFixed(1).replace(/\.0$/, "")}K L`;
+  return `${Number(value).toFixed(2)} L`;
+}
+
+async function loadHistoricalChart() {
+  if (!(historicalChart instanceof HTMLCanvasElement)) return;
+
+  const requestId = ++historicalChartRequest;
+  const periodFilter = document.querySelector('[data-history-filter="period"]');
+  const wellFilter = document.querySelector('[data-history-chart-filter="well"]');
+  const granularityFilter = document.querySelector('[data-history-chart-filter="granularity"]');
+  const parameters = new URLSearchParams({
+    period: periodFilter instanceof HTMLSelectElement ? periodFilter.value : "all",
+    well: wellFilter instanceof HTMLSelectElement ? wellFilter.value : "",
+    granularity: granularityFilter instanceof HTMLSelectElement ? granularityFilter.value : "auto",
+  });
+
+  if (historicalChartSummary) historicalChartSummary.textContent = "Loading cumulative absorption…";
+  try {
+    const response = await fetch(`/main/api/historical-measurements.php?${parameters.toString()}`, { cache: "no-store" });
+    const payload = await response.json();
+    if (!response.ok || !payload.success || requestId !== historicalChartRequest) throw new Error("Unable to load chart data");
+
+    historicalChartData = Array.isArray(payload.buckets) ? payload.buckets : [];
+    historicalChartGranularity = payload.granularity || "day";
+    const scope = payload.wellCode ? `for ${payload.wellCode}` : "across all monitored wells";
+    historicalChartSummary.textContent = `${compactLitres(payload.totalLitres || 0)} cumulative absorption ${scope} · ${historicalChartGranularity} view`;
+    drawHistoricalChart();
+  } catch {
+    if (requestId !== historicalChartRequest) return;
+    historicalChartData = [];
+    if (historicalChartSummary) historicalChartSummary.textContent = "Historical chart data is unavailable.";
+    drawHistoricalChart();
+  }
+}
 
 function drawHistoricalChart() {
   if (!(historicalChart instanceof HTMLCanvasElement)) {
@@ -512,20 +557,10 @@ function drawHistoricalChart() {
   context.scale(scale, scale);
   const width = bounds.width;
   const height = bounds.height;
-  const padding = { top: 20, right: 22, bottom: 20, left: 22 };
-  const visibleRows = Array.from(document.querySelectorAll("[data-history-row]"))
-    .filter((row) => !row.hidden)
-    .slice(0, 20)
-    .reverse();
-  const values = visibleRows
-    .map((row) => Number(row.dataset.waterValue))
-    .filter((value) => Number.isFinite(value));
-  const chartValues = values.length > 0 ? values : [0];
-  const dataMinimum = Math.min(...chartValues);
-  const dataMaximum = Math.max(...chartValues);
-  const range = Math.max(0.5, dataMaximum - dataMinimum);
-  const minimum = Math.max(0, dataMinimum - range * 0.18);
-  const maximum = dataMaximum + range * 0.18;
+  const padding = { top: 20, right: 28, bottom: 42, left: 68 };
+  const chartValues = historicalChartData.map((bucket) => Number(bucket.cumulativeLitres)).filter(Number.isFinite);
+  const maximum = Math.max(1, ...chartValues) * 1.08;
+  const minimum = 0;
   const plotWidth = width - padding.left - padding.right;
   const plotHeight = height - padding.top - padding.bottom;
 
@@ -539,6 +574,10 @@ function drawHistoricalChart() {
     context.moveTo(padding.left, y);
     context.lineTo(width - padding.right, y);
     context.stroke();
+    context.fillStyle = "#6b7280";
+    context.font = "11px sans-serif";
+    context.textAlign = "right";
+    context.fillText(compactLitres(maximum - ((maximum - minimum) / 4) * line), padding.left - 8, y + 4);
   }
 
   const points = chartValues.map((value, index) => ({
@@ -564,9 +603,21 @@ function drawHistoricalChart() {
     context.lineWidth = 1.5;
     context.stroke();
   });
+
+  if (historicalChartData.length > 0) {
+    const labelIndexes = [...new Set([0, Math.floor((historicalChartData.length - 1) / 2), historicalChartData.length - 1])];
+    context.fillStyle = "#6b7280";
+    context.font = "11px sans-serif";
+    context.textAlign = "center";
+    labelIndexes.forEach((index) => {
+      const point = points[index];
+      const label = historicalChartData[index]?.period ?? "";
+      context.fillText(label, point.x, height - 14);
+    });
+  }
 }
 
-drawHistoricalChart();
+loadHistoricalChart();
 window.addEventListener("resize", drawHistoricalChart);
 
 function downloadTextFile(filename, content, mimeType = "text/csv;charset=utf-8") {
